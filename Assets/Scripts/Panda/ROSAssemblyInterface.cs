@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using RosMessageTypes.PandaUnity;
+using RosMessageTypes.Std;
 using Microsoft.MixedReality.Toolkit.UI;
 
 public class ROSAssemblyInterface : MonoBehaviour
@@ -32,13 +33,12 @@ public class ROSAssemblyInterface : MonoBehaviour
 
     // Variables required for ROS communication
     public string plannerServiceName = "motion_planner_service";
+    public string nextStepTopicName = "next_step";
 
     private RobotController controller;
     private RobotController controller_hologram;
 
     // Utility variables
-    private Vector3[] buttonsOffsets = { new Vector3(0.5f, 0.65f, 0.0f), new Vector3(0.5f, 0.5f, 0.0f), new Vector3(0.65f, 0.65f, 0.0f) };
-
     private float deltaT = 3.0f;
 
     private int assemblyStep = 0;
@@ -56,40 +56,45 @@ public class ROSAssemblyInterface : MonoBehaviour
         // Get ROS connection static instance
         ros = ROSConnection.instance;
 
+        // Subscribe to next step message
+        ros.Subscribe<Int32>(nextStepTopicName, Dispatcher);
+
         // Instantiate Robot Controller
         controller = gameObject.AddComponent<RobotController>();
         controller.Init(robot, ground.transform);
 
         // Instantiate Holographic Robot  Controller
-        //controller_hologram = gameObject.AddComponent<RobotController>();
-        //controller_hologram.Init(robot_hologram, ground_holo.transform);
+        controller_hologram = gameObject.AddComponent<RobotController>();
+        controller_hologram.Init(robot_hologram, ground_holo.transform);
 
-        // Get reference to Canvas layer
-        var buttonsLayer = GameObject.Find("Canvas/Buttons");
-        int numButtons = buttonsLayer.transform.childCount;
-        buttons = new GameObject[numButtons];
-        for (int j = 0; j < numButtons; j++)
-        {
-            var button = buttonsLayer.transform.GetChild(j).gameObject;
-            buttons[j] = button;
-        }
     }
 
     public void Spawn()
     {
         var markerPosition = poseMarker.transform.position;
         poseMarker.GetComponent<Behaviour>().enabled = false;
+
         controller.Spawn(markerPosition);
-        //controller_hologram.Spawn(markerPosition);
+        controller_hologram.Spawn(markerPosition);
+
         poseMarker.SetActive(false);
-        for(int i=0; i<buttons.Length; i++)
+    }
+
+    private void Dispatcher(Int32 msg)
+    {
+        if(msg.data > 0)
         {
-            buttons[i].transform.SetPositionAndRotation(poseMarker.transform.position + buttonsOffsets[i], Quaternion.Euler(0, 0, 0));
-            buttons[i].SetActive(true);
+            NextAssemblyStep(msg.data);
+            return;
+        }
+        else if(msg.data < 0)
+        {
+            ResetStep();
+            return;
         }
     }
 
-    public void NextAssemblyStep()
+    private void NextAssemblyStep(int value)
     {
         if(assemblyCount < chair.transform.childCount - 1 && prevStepSolved)
         {
@@ -135,14 +140,19 @@ public class ROSAssemblyInterface : MonoBehaviour
             assembled.SetActive(false);
             assembled = chair.transform.GetChild(chair.transform.childCount - 1).gameObject;
             assembled.SetActive(true);
-            foreach(GameObject button in buttons)
+            /*foreach(GameObject button in buttons)
             {
                 button.SetActive(false);
-            }
+            }*/
         }
+
+        if(value < 5)
+        {
+            StartCoroutine(SolveStep());
+        }  
     }
 
-    public void ResetStep()
+    private void ResetStep()
     {
         piece1.transform.SetPositionAndRotation(piece1InitPosition, piece1InitRot);
         piece1.GetComponent<ObjectManipulator>().enabled = true;
@@ -151,6 +161,8 @@ public class ROSAssemblyInterface : MonoBehaviour
         piece2.GetComponent<ObjectManipulator>().enabled = true;
 
         stepSolvedCount = 0;
+
+        StartCoroutine(SolveStep());
     }
 
     public void CheckInPosition(int id)
@@ -219,12 +231,10 @@ public class ROSAssemblyInterface : MonoBehaviour
         }
     }
 
-    public void SolveStep()
+    private IEnumerator SolveStep()
     {
-        if(stepSolvedCount < 1)
-        {
-            StartCoroutine(PlanAction());
-        }
+        yield return new WaitForSeconds(1.0f);
+        StartCoroutine(PlanAction());
         stepSolvedCount += 1;
     }
 
@@ -282,6 +292,13 @@ public class ROSAssemblyInterface : MonoBehaviour
 
     private void plannerCallback(PlannerServiceResponse response)
     {
+        StartCoroutine(TrajectoryExecutioner(response));
+    }
+
+    private IEnumerator TrajectoryExecutioner(PlannerServiceResponse response)
+    {
+        StartCoroutine(controller_hologram.ExecuteTrajectories(response));
+        yield return new WaitForSeconds(deltaT);
         StartCoroutine(controller.ExecuteTrajectories(response));
     }
 }

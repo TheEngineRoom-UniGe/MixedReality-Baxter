@@ -223,13 +223,14 @@ public class RobotController : MonoBehaviour
             double[] lastJointState = initialJointConfig.angles.Select(x => x * Mathf.Rad2Deg).ToArray();
 
             // For every trajectory plan returned
-            //int steps = 15; // For speedup execution on HoloLens
-            int steps = 30; // For execution on Editor 
+            int steps = 10; // For speedup execution on HoloLens
+            //int steps = 30; // For execution on Editor 
             for (int poseIndex = 0; poseIndex < response.arm_trajectory.trajectory.Length; poseIndex++)
             {
                 if (poseIndex == response.arm_trajectory.trajectory.Length - 1)
                 {
                     coroutineRunning = false;
+                    steps = 5;
                 }
 
                 // For every robot pose in trajectory plan
