@@ -32,6 +32,7 @@ catkin_package()
 catkin_install_python(PROGRAMS
   scripts/motion_planner.py
   scripts/server_endpoint.py
+  scripts/manager.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

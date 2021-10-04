@@ -1,10 +1,12 @@
 <?xml version="1.0"?>
 <launch>
+    <arg name="file_name" default="test"/>
+
     <rosparam file="$(find panda_unity)/config/params.yaml" command="load"/>
     
     <node name="server_endpoint" pkg="panda_unity" type="server_endpoint.py" args="--wait" output="screen" respawn="true" />
-    
     <node name="planner" pkg="panda_unity" type="motion_planner.py" args="--wait" output="screen"/>
+    <node name="manager" pkg="panda_unity" type="manager.py" args="--file_name $(arg file_name)" required="true" output="screen"/>
     
     <include file="$(find panda_moveit_config)/launch/demo.launch" />
 </launch>

@@ -70,10 +70,11 @@ class MotionPlanner:
   def routine_dispatcher(self, req):
 
       if req.routine == "pickandplace":
-          return pick_and_place(req)
+          return self.pick_and_place(req)
       elif req.routine == "gohome":
-          return go_home(req)
-      else return None
+          return self.go_home(req)
+      else: 
+          return None
     
   # Plan pick and place action
   def pick_and_place(self, req):
@@ -112,7 +113,7 @@ class MotionPlanner:
 
     # Place - Descend and leave object in the desired position
     place_pose = copy.deepcopy(req.place_pose)
-    place_pose.position.z -= 0.1*0.8
+    place_pose.position.z -= 0.1
     place_traj = self.plan_cartesian_trajectory(place_pose, previous_ending_joint_angles)
 
     previous_ending_joint_angles = place_traj.joint_trajectory.points[-1].positions
@@ -120,11 +121,15 @@ class MotionPlanner:
 
     # Lift-up
     lift_up_pose = copy.deepcopy(req.place_pose)
-    lift_up_pose.position.z += 0.2
+    lift_up_pose.position.z += 0.1
     lift_up_traj = self.plan_cartesian_trajectory(lift_up_pose, previous_ending_joint_angles)
 
     previous_ending_joint_angles = lift_up_traj.joint_trajectory.points[-1].positions
     response.arm_trajectory.trajectory.append(lift_up_traj)
+    
+    # Return to home pose
+    return_home_traj = self.plan_return_to_home(initial_joint_configuration, previous_ending_joint_angles)
+    response.arm_trajectory.trajectory.append(return_home_traj)
         
     self.move_group.clear_pose_targets()
   
@@ -147,7 +152,7 @@ class MotionPlanner:
 def main():
 
   # Initialize node
-  rospy.init_node('motion_planner_service_node')
+  rospy.init_node('motion_planner_service_node', log_level=rospy.WARN)
   moveit_commander.roscpp_initialize(sys.argv) 
 
   # Define motion planner object
