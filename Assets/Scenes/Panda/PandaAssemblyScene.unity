@@ -3428,7 +3428,7 @@ GameObject:
   - component: {fileID: 533800220}
   m_Layer: 0
   m_Name: Box
-  m_TagString: gripper
+  m_TagString: robot
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3458,8 +3458,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.1704122, y: 0.06520124, z: 0.057116337}
-  m_Center: {x: -0.011109166, y: -0.02880087, z: 0.0052455724}
+  m_Size: {x: 0.1704122, y: 0.050671183, z: 0.057116337}
+  m_Center: {x: -0.011109165, y: -0.03606592, z: 0.005245571}
 --- !u!1 &585761399
 GameObject:
   m_ObjectHideFlags: 0
@@ -5367,8 +5367,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.19768746, y: 0.23427375, z: 0.2}
-  m_Center: {x: -0.0388437, y: -0.045453116, z: -0.0000000013160495}
+  m_Size: {x: 0.19768746, y: 0.42950198, z: 0.2}
+  m_Center: {x: -0.038843684, y: -0.1430674, z: 0.000000015140479}
 --- !u!1 &851787658
 GameObject:
   m_ObjectHideFlags: 0
@@ -5715,7 +5715,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 897140936}
   m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -0.524, y: 0, z: 0.279}
+  m_LocalPosition: {x: -0.576, y: 0, z: 0.094}
   m_LocalScale: {x: 0.019999996, y: 0.03, z: 0.12}
   m_Children: []
   m_Father: {fileID: 187944126}
@@ -6386,6 +6386,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9090ae501ff9cd459bec5271d40249c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!21 &1003340571
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 'markerMaterial
+
+    122376'
+  m_Shader: {fileID: 10752, guid: 0000000000000000f000000000000000, type: 0}
+  m_ShaderKeywords: 
+  m_LightmapFlags: 5
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: 9047f9db83940c8409bbdf0fb460c354, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats: []
+    m_Colors:
+    - _Color: {r: 0.82089555, g: 0.82089555, b: 0.82089555, a: 1}
+  m_BuildTextureStacks: []
 --- !u!1 &1027241638
 GameObject:
   m_ObjectHideFlags: 0
@@ -6576,7 +6605,7 @@ MonoBehaviour:
   nextStepTopicName: next_step
   stepDoneTopicName: step_done
   collisionCountTopicName: collision_count
-  deltaT: 3
+  deltaT: 4
 --- !u!1001 &1079583177
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6823,35 +6852,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 87503510f4f882845859a10e152b0388, type: 3}
   m_PrefabInstance: {fileID: 1086868905}
   m_PrefabAsset: {fileID: 0}
---- !u!21 &1106286708
-Material:
-  serializedVersion: 6
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 'markerMaterial
-
-    25324'
-  m_Shader: {fileID: 10752, guid: 0000000000000000f000000000000000, type: 0}
-  m_ShaderKeywords: 
-  m_LightmapFlags: 5
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 9047f9db83940c8409bbdf0fb460c354, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Floats: []
-    m_Colors:
-    - _Color: {r: 0.82089555, g: 0.82089555, b: 0.82089555, a: 1}
-  m_BuildTextureStacks: []
 --- !u!1 &1109262565
 GameObject:
   m_ObjectHideFlags: 0
@@ -6869,7 +6869,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1109262566
 Transform:
   m_ObjectHideFlags: 0
@@ -7512,7 +7512,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 1106286708}
+  - {fileID: 1003340571}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8327,7 +8327,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1374770121}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.711, y: 0, z: -0.139}
+  m_LocalPosition: {x: -0.752, y: 0, z: 0.083}
   m_LocalScale: {x: 0.02, y: 0.03, z: 0.15}
   m_Children: []
   m_Father: {fileID: 187944126}
@@ -8910,8 +8910,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.1962829, y: 0.22308262, z: 0.2}
-  m_Center: {x: -0.019835964, y: -0.045026433, z: 0.000000017263073}
+  m_Size: {x: 0.1962829, y: 0.36722672, z: 0.2}
+  m_Center: {x: -0.019835953, y: -0.11709867, z: 0.000000029413535}
 --- !u!1 &1447999484
 GameObject:
   m_ObjectHideFlags: 0
@@ -9844,7 +9844,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1565667790}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.682, y: 0, z: 0.075}
+  m_LocalPosition: {x: 0.634, y: 0, z: 0.075}
   m_LocalScale: {x: 0.02, y: 0.03, z: 0.3}
   m_Children: []
   m_Father: {fileID: 187944126}
@@ -10524,7 +10524,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1733623894
 Transform:
   m_ObjectHideFlags: 0
@@ -10533,7 +10533,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1733623893}
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.514, y: 0.06, z: 0.532}
+  m_LocalPosition: {x: 0.649, y: 0.06, z: 0.251}
   m_LocalScale: {x: 0.02, y: 0.12, z: 0.125}
   m_Children: []
   m_Father: {fileID: 187944126}

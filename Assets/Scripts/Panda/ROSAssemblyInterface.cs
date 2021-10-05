@@ -229,6 +229,7 @@ public class ROSAssemblyInterface : MonoBehaviour
                 piece1.GetComponent<Renderer>().material = green;
                 
                 stepSolvedCount += 1;
+                ros.Send(stepDoneTopicName, new Bool(data: false));
             }
         }
         else
@@ -258,6 +259,7 @@ public class ROSAssemblyInterface : MonoBehaviour
                 piece2.GetComponent<Renderer>().material = green;
 
                 stepSolvedCount += 1;
+                ros.Send(stepDoneTopicName, new Bool(data: false));
             }
         }
 

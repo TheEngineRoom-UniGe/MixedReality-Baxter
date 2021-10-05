@@ -14,7 +14,7 @@ public class CollisionCheck : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.collider.tag == "robot" || collision.collider.tag == "piece")
+        if (collision.collider.tag == "robot" /*|| collision.collider.tag == "piece"*/)
         {
             collisions += 1;
         }
