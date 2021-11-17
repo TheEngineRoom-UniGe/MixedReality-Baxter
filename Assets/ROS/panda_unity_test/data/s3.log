@@ -1,0 +1,58 @@
+12:39:56,464 rospy.internal INFO topic[/next_step] adding connection to [/server_endpoint], count 0
+12:39:56,508 rospy.internal INFO topic[/step_done] adding connection to [http://simone-Aspire-V3-772G:35727/], count 0
+12:39:56,509 rospy.internal INFO topic[/collision_count] adding connection to [http://simone-Aspire-V3-772G:35727/], count 0
+12:39:56,605 rospy.internal INFO topic[/rosout] adding connection to [/rosout], count 0
+12:40:05,626 rospy.core INFO signal_shutdown [atexit]
+12:40:05,635 rospy.internal INFO topic[/rosout] removing connection to /rosout
+12:40:05,635 rospy.internal INFO topic[/next_step] removing connection to /server_endpoint
+12:40:05,635 rospy.internal INFO topic[/step_done] removing connection to http://simone-Aspire-V3-772G:35727/
+12:40:05,635 rospy.internal INFO topic[/collision_count] removing connection to http://simone-Aspire-V3-772G:35727/
+12:40:05,635 rospy.impl.masterslave INFO atexit
+12:40:05,640 rospy.internal ERROR Unable to initiate TCP/IP socket to simone-Aspire-V3-772G:42251 (http://simone-Aspire-V3-772G:35727/): Traceback (most recent call last):
+  File "/opt/ros/noetic/lib/python3/dist-packages/rospy/impl/tcpros_base.py", line 562, in connect
+    self.read_header()
+  File "/opt/ros/noetic/lib/python3/dist-packages/rospy/impl/tcpros_base.py", line 657, in read_header
+    self._validate_header(read_ros_handshake_header(sock, self.read_buff, self.protocol.buff_size))
+  File "/opt/ros/noetic/lib/python3/dist-packages/rospy/impl/tcpros_base.py", line 600, in _validate_header
+    raise TransportInitError("remote error reported: %s"%header['error'])
+rospy.exceptions.TransportInitError: remote error reported: node shutting down
+
+12:40:16,764 rospy.internal INFO topic[/step_done] adding connection to [http://simone-Aspire-V3-772G:43403/], count 0
+12:40:16,764 rospy.internal INFO topic[/collision_count] adding connection to [http://simone-Aspire-V3-772G:43403/], count 0
+12:40:16,791 rospy.internal INFO topic[/next_step] adding connection to [/server_endpoint], count 0
+12:40:16,886 rospy.internal INFO topic[/rosout] adding connection to [/rosout], count 0
+12:41:17,315 root INFO START TRIAL WITHOUT HOLO
+12:42:42,420 root INFO Human finished in: 79.99489974975586
+12:42:50,254 root INFO Reset count: 0
+12:42:50,255 root INFO END TRIAL
+12:42:50,362 root INFO Collisions: 0
+12:43:01,245 root INFO START TRIAL WITHOUT HOLO
+12:43:22,103 root INFO Human finished in: 19.344010829925537
+12:43:22,104 root INFO Step 1: 19.34457540512085
+12:44:16,89 root INFO Human finished in: 28.605972051620483
+12:44:16,107 root INFO Step 2: 28.62377405166626
+12:44:41,385 root INFO Human finished in: 23.119652271270752
+12:44:41,386 root INFO Step 3: 23.120293617248535
+12:45:08,844 root INFO Human finished in: 25.34618353843689
+12:45:08,844 root INFO Step 4: 25.34670639038086
+12:45:11,937 root INFO Reset count: 0
+12:45:11,937 root INFO END TRIAL
+12:45:12,39 root INFO Collisions: 5
+12:45:13,682 root INFO START TRIAL WITH HOLO
+12:45:28,133 root INFO Human finished in: 12.750606298446655
+12:45:33,922 root INFO Step 1: 18.539647579193115
+12:45:48,843 root INFO Human finished in: 11.900431632995605
+12:45:55,41 root INFO Step 2: 18.098484992980957
+12:46:11,916 root INFO Human finished in: 14.668640851974487
+12:46:15,750 root INFO Step 3: 18.502558946609497
+12:46:38,493 root INFO Human finished in: 20.70952844619751
+12:46:38,493 root INFO Step 4: 20.710015535354614
+12:46:41,530 root INFO Reset count: 0
+12:46:41,531 root INFO END TRIAL
+12:46:41,640 root INFO Collisions: 0
+12:46:44,584 rospy.core INFO signal_shutdown [atexit]
+12:46:44,606 rospy.internal INFO topic[/rosout] removing connection to /rosout
+12:46:44,606 rospy.internal INFO topic[/next_step] removing connection to /server_endpoint
+12:46:44,606 rospy.internal INFO topic[/step_done] removing connection to http://simone-Aspire-V3-772G:43403/
+12:46:44,606 rospy.internal INFO topic[/collision_count] removing connection to http://simone-Aspire-V3-772G:43403/
+12:46:44,606 rospy.impl.masterslave INFO atexit

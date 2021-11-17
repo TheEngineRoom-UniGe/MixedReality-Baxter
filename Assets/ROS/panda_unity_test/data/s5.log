@@ -1,0 +1,58 @@
+13:03:49,688 rospy.internal INFO topic[/next_step] adding connection to [/server_endpoint], count 0
+13:03:49,716 rospy.internal INFO topic[/step_done] adding connection to [http://simone-Aspire-V3-772G:45923/], count 0
+13:03:49,717 rospy.internal INFO topic[/collision_count] adding connection to [http://simone-Aspire-V3-772G:45923/], count 0
+13:03:49,813 rospy.internal INFO topic[/rosout] adding connection to [/rosout], count 0
+13:04:52,681 rospy.core INFO signal_shutdown [atexit]
+13:04:52,688 rospy.internal INFO topic[/rosout] removing connection to /rosout
+13:04:52,689 rospy.internal INFO topic[/next_step] removing connection to /server_endpoint
+13:04:52,692 rospy.internal INFO topic[/step_done] removing connection to http://simone-Aspire-V3-772G:45923/
+13:04:52,692 rospy.internal INFO topic[/collision_count] removing connection to http://simone-Aspire-V3-772G:45923/
+13:04:52,692 rospy.impl.masterslave INFO atexit
+13:04:52,693 rospy.internal ERROR Unable to initiate TCP/IP socket to simone-Aspire-V3-772G:36685 (http://simone-Aspire-V3-772G:45923/): Traceback (most recent call last):
+  File "/opt/ros/noetic/lib/python3/dist-packages/rospy/impl/tcpros_base.py", line 562, in connect
+    self.read_header()
+  File "/opt/ros/noetic/lib/python3/dist-packages/rospy/impl/tcpros_base.py", line 657, in read_header
+    self._validate_header(read_ros_handshake_header(sock, self.read_buff, self.protocol.buff_size))
+  File "/opt/ros/noetic/lib/python3/dist-packages/rospy/impl/tcpros_base.py", line 600, in _validate_header
+    raise TransportInitError("remote error reported: %s"%header['error'])
+rospy.exceptions.TransportInitError: remote error reported: node shutting down
+
+13:05:06,530 rospy.internal INFO topic[/step_done] adding connection to [http://simone-Aspire-V3-772G:41317/], count 0
+13:05:06,530 rospy.internal INFO topic[/collision_count] adding connection to [http://simone-Aspire-V3-772G:41317/], count 0
+13:05:06,541 rospy.internal INFO topic[/next_step] adding connection to [/server_endpoint], count 0
+13:05:06,745 rospy.internal INFO topic[/rosout] adding connection to [/rosout], count 0
+13:05:30,737 root INFO START TRIAL WITHOUT HOLO
+13:06:14,713 root INFO Human finished in: 43.090049505233765
+13:06:14,713 root INFO Step 1: 43.090506076812744
+13:06:21,822 root INFO Reset count: 0
+13:06:21,822 root INFO END TRIAL
+13:06:21,912 root INFO Collisions: 1
+13:06:24,984 root INFO START TRIAL WITHOUT HOLO
+13:06:54,726 root INFO Human finished in: 28.883485078811646
+13:06:54,755 root INFO Step 1: 28.912906646728516
+13:07:15,46 root INFO Human finished in: 17.575134992599487
+13:07:17,217 root INFO Step 2: 19.746734619140625
+13:07:35,125 root INFO Human finished in: 14.611083269119263
+13:07:39,858 root INFO Step 3: 19.344058752059937
+13:08:46,908 root INFO Human finished in: 63.36350965499878
+13:08:46,909 root INFO Step 4: 63.3640410900116
+13:08:50,119 root INFO Reset count: 0
+13:08:50,120 root INFO END TRIAL
+13:08:50,236 root INFO Collisions: 5
+13:08:53,890 root INFO START TRIAL WITH HOLO
+13:09:08,304 root INFO Human finished in: 9.81774353981018
+13:09:18,472 root INFO Step 1: 19.98511052131653
+13:09:37,138 root INFO Human finished in: 15.460562944412231
+13:09:39,890 root INFO Step 2: 18.21237826347351
+13:10:27,463 root INFO Step 3: 39.13806653022766
+13:11:13,383 root INFO Human finished in: 21.23093271255493
+13:11:13,384 root INFO Step 4: 21.231659173965454
+13:11:21,79 root INFO Reset count: 0
+13:11:21,79 root INFO END TRIAL
+13:11:21,241 root INFO Collisions: 0
+13:13:24,454 rospy.core INFO signal_shutdown [atexit]
+13:13:24,462 rospy.internal INFO topic[/rosout] removing connection to /rosout
+13:13:24,462 rospy.internal INFO topic[/next_step] removing connection to /server_endpoint
+13:13:24,462 rospy.internal INFO topic[/step_done] removing connection to http://simone-Aspire-V3-772G:41317/
+13:13:24,462 rospy.internal INFO topic[/collision_count] removing connection to http://simone-Aspire-V3-772G:41317/
+13:13:24,462 rospy.impl.masterslave INFO atexit

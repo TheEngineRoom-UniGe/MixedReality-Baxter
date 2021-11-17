@@ -1,9 +1,13 @@
 using System.Collections;
 using System.Linq;
 
-using RosMessageTypes.PandaUnity;
-using ROSGeometry;
+using RosMessageTypes.PandaUnityTest;
+using Unity.Robotics.ROSTCPConnector.ROSGeometry;
+using Unity.Robotics.Visualizations;
+using Unity.Robotics.UrdfImporter;
+
 using Quaternion = UnityEngine.Quaternion;
+using JointState = RosMessageTypes.Sensor.JointStateMsg;
 using Transform = UnityEngine.Transform;
 using Vector3 = UnityEngine.Vector3;
 
@@ -15,18 +19,23 @@ public class RobotController : MonoBehaviour
 
     // Timing variables for rendering trajectory
     private float jointAssignmentWaitRest = 0.01f;
-    private float jointAssignmentWait = 0.005f;
 
     // Offset variables for picking and placing objects
     private Vector3 liftOffset = 0.2f * Vector3.up;
-    private Vector3 placeOffset = 0.04f * Vector3.up;
 
     // Scene objects (robot and interactables)
     private GameObject robot;
+    private UrdfRobot urdfRobot;
 
     // Articulation Bodies
     private ArticulationBody[] jointArticulationBodies;
     private ArticulationBody[] gripper;
+
+    // Drawing components
+    private RobotVisualization robotVisualization;
+    private Drawing3d drawing3;
+    private JointState jointState;
+    private Material mat;
 
     // Utility variables
     public bool coroutineRunning = false;
@@ -41,13 +50,32 @@ public class RobotController : MonoBehaviour
         Return
     };
 
-    
-    public void Init(GameObject robot, Transform ground)
+
+    public void Init(GameObject robot, UrdfRobot urdfRobot, Transform ground, Material mat)
     {
         this.robot = robot;
+        this.urdfRobot = urdfRobot;
+        this.mat = mat;
 
         GetRobotReference();
         GoToRestPosition();
+
+        robotVisualization = new RobotVisualization(this.urdfRobot);
+
+        drawing3 = Drawing3d.Create(10.0f, this.mat);
+        jointState = new JointState();
+        string[] names = {
+            "panda_joint1",
+            "panda_joint2",
+            "panda_joint3",
+            "panda_joint4",
+            "panda_joint5",
+            "panda_joint6",
+            "panda_joint7",
+            "panda_finger_joint1",
+            "panda_finger_joint2"
+        };
+        jointState.name = names;
 
     }
 
@@ -110,9 +138,9 @@ public class RobotController : MonoBehaviour
         gripper[1].xDrive = rightDrive;
     }
 
-    ArmJoints InitialJointConfig()
+    ArmJointsMsg InitialJointConfig()
     {
-        ArmJoints joints = new ArmJoints();
+        ArmJointsMsg joints = new ArmJointsMsg();
 
         joints.angles = new double[numRobotJoints];
         for (int i = 0; i < numRobotJoints; i++)
@@ -152,7 +180,7 @@ public class RobotController : MonoBehaviour
     }
 
     // Pick and place service request
-    public PlannerServiceRequest PickAndPlaceService(int idx, Vector3 pickPosition, Vector3 placePosition)
+    public PlannerServiceRequest PickAndPlaceService(Vector3 pickPosition, Vector3 placePosition)
     {
         coroutineRunning = true;
 
@@ -163,27 +191,19 @@ public class RobotController : MonoBehaviour
         request.joints = InitialJointConfig();
 
         // Pick Pose
-        ROSGeometry.Quaternion<FLU> fixedOrientation;
-        if (idx == 0)
-        {
-            fixedOrientation = Quaternion.Euler(180, -135, 0).To<FLU>();
-        }
-        else
-        {
-            fixedOrientation = Quaternion.Euler(180, -225, 0).To<FLU>();
-        }
-         
-        request.pick_pose = new RosMessageTypes.Geometry.Pose
+        Quaternion fixedOrientation = Quaternion.Euler(180, -135, 0);
+
+        request.pick_pose = new RosMessageTypes.Geometry.PoseMsg
         {
             position = (pickPosition + liftOffset).To<FLU>(),
-            orientation = fixedOrientation
+            orientation = fixedOrientation.To<FLU>()
         };
 
         // Place Pose
-        request.place_pose = new RosMessageTypes.Geometry.Pose
+        request.place_pose = new RosMessageTypes.Geometry.PoseMsg
         {
             position = (placePosition + liftOffset).To<FLU>(),
-            orientation = fixedOrientation
+            orientation = fixedOrientation.To<FLU>()
         };
 
         return request;
@@ -221,51 +241,69 @@ public class RobotController : MonoBehaviour
         {
             var initialJointConfig = InitialJointConfig();
             double[] lastJointState = initialJointConfig.angles.Select(x => x * Mathf.Rad2Deg).ToArray();
+            var renderOnlyFirst = false;
+            var alreadyRendered = false;
+            var doDraw = false;
+            var alpha = 1.0f;
+            int minN = 5;
+            int halfLength = 1;
 
             // For every trajectory plan returned
-            int steps = 10; // For speedup execution on HoloLens
+            //int steps = 1; // For speedup execution on HoloLens
             //int steps = 30; // For execution on Editor 
             for (int poseIndex = 0; poseIndex < response.arm_trajectory.trajectory.Length; poseIndex++)
             {
                 if (poseIndex == response.arm_trajectory.trajectory.Length - 1)
                 {
                     coroutineRunning = false;
-                    steps = 5;
+                    //steps = 5;
                 }
-
+                renderOnlyFirst = false;
+                alreadyRendered = false;
+                if(response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length < minN)
+                {
+                    renderOnlyFirst = true;
+                }
+                else
+                {
+                    halfLength = (int)Mathf.Floor(response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length / 2.0f);
+                }
                 // For every robot pose in trajectory plan
                 for (int jointConfigIndex = 0; jointConfigIndex < response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length; jointConfigIndex++)
                 {
                     var jointPositions = response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points[jointConfigIndex].positions;
                     double[] result = jointPositions.Select(r => (double)r * Mathf.Rad2Deg).ToArray();
-                    for (int i = 0; i <= steps; i++)
+
+                    if(renderOnlyFirst && !alreadyRendered)
                     {
-                        for (int joint = 0; joint < jointArticulationBodies.Length; joint++)
-                        {
-                            var joint1XDrive = jointArticulationBodies[joint].xDrive;
-                            joint1XDrive.target = (float)(lastJointState[joint] + (result[joint] - lastJointState[joint]) * (1.0f / steps) * i);
-                            jointArticulationBodies[joint].xDrive = joint1XDrive;
-                        }
-
-                        yield return new WaitForSeconds(jointAssignmentWait);
-
+                        doDraw = true;
+                        alreadyRendered = true;
                     }
-                    // Wait for robot to achieve pose for all joint assignments
+                    else if(!renderOnlyFirst && jointConfigIndex % halfLength == 0)
+                    {
+                        doDraw = true;
+                    }
+
                     lastJointState = result;
-                }
-                // Make sure gripper is open at the beginning
-                if (poseIndex == (int)Poses.PreGrasp || poseIndex == (int)Poses.Place)
-                {
-                    yield return new WaitForSeconds(0.5f);
-                    OpenGripper();
-                }
-                // Close gripper on object grasping
-                if (poseIndex == (int)Poses.Grasp)
-                {
-                    yield return new WaitForSeconds(0.5f);
-                    CloseGripper();
+
+                    if(doDraw)
+                    {
+                        jointState.position = new double[9];
+                        for (int k = 0; k < result.Length; k++)
+                        {
+                            jointState.position[k] = jointPositions[k];
+                        }
+                        jointState.position[7] = 0.0f;
+                        jointState.position[8] = 0.0f;
+                        drawing3 = Drawing3d.Create(20.0f, mat);
+                        robotVisualization.DrawGhost(drawing3, jointState, new Color(0.7529f, 0.7529f, 0.7529f, alpha));
+                        alpha -= 0.1f;
+
+                        doDraw = false;
+                    }
                 }
             }
+            yield return new WaitForSeconds(1.0f);
         }
         
     }

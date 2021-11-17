@@ -1,0 +1,15 @@
+17:30:45,500 rospy.internal INFO topic[/step_done] adding connection to [http://simone-Aspire-V3-772G:32861/], count 0
+17:30:45,501 rospy.internal INFO topic[/collision_count] adding connection to [http://simone-Aspire-V3-772G:32861/], count 0
+17:30:45,509 rospy.internal INFO topic[/next_step] adding connection to [/server_endpoint], count 0
+17:30:45,605 rospy.internal INFO topic[/rosout] adding connection to [/rosout], count 0
+17:31:15,718 root INFO START TRIAL WITH HOLO
+17:32:03,870 root INFO Human finished in: 45.93747663497925
+17:32:03,871 root INFO Step 1: 45.93794512748718
+17:33:15,191 root INFO Human finished in: 68.68907523155212
+17:33:15,191 root INFO Step 2: 68.6896026134491
+17:34:44,252 rospy.core INFO signal_shutdown [atexit]
+17:34:44,261 rospy.internal INFO topic[/rosout] removing connection to /rosout
+17:34:44,261 rospy.internal INFO topic[/next_step] removing connection to /server_endpoint
+17:34:44,261 rospy.internal INFO topic[/step_done] removing connection to http://simone-Aspire-V3-772G:32861/
+17:34:44,262 rospy.internal INFO topic[/collision_count] removing connection to http://simone-Aspire-V3-772G:32861/
+17:34:44,262 rospy.impl.masterslave INFO atexit

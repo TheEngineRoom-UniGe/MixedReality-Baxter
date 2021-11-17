@@ -6,8 +6,17 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Panda/PandaAssemblyScene.unity
-    guid: f49c9915b71da1345ba59bb7090bcea1
+    path: Assets/Samples/Mixed Reality Toolkit Foundation/2.5.4/Scene System Resources/DefaultManagerScene.unity
+    guid: ae7bb08d297fb69408695d8de0962524
+  - enabled: 1
+    path: Assets/Scenes/Baxter/MenuScene.unity
+    guid: 961e1dc2adf9e0f4296d1febbe5d3680
+  - enabled: 1
+    path: Assets/Scenes/Baxter/BaxterGhostTrajectoryScene.unity
+    guid: badc20fc178d96d4fa8ac8f2c48df8bf
+  - enabled: 1
+    path: Assets/Scenes/Baxter/BaxterAnticipatoryTrajectoryScene.unity
+    guid: a1d2e786f081fc045bfb88e427ccfceb
   m_configObjects:
     Unity.XR.WindowsMR.Settings: {fileID: 11400000, guid: cc7407aeb25dadd4d872d4690fc40b43, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: a4a2ec535f58d234cb1d884f85086016, type: 2}
