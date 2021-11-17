@@ -397,7 +397,7 @@ public class BaxterController : MonoBehaviour
                     }
                     drawing3 = Drawing3d.Create(20.0f, mat);
                     robotVisualization.DrawGhost(drawing3, jointState, new Color(red, 0, 0, 1.0f));
-                    red += 0.03f;
+                    red += 0.02f;
 
                     doDraw = false;
                 }

@@ -169,7 +169,7 @@ public class BaxterROSInterface : MonoBehaviour
     public void Spawn()
     {
         var imTargetPosition = imageTarget.transform.position;
-        imageTarget.GetComponent<ImageTargetBehaviour>().enabled = false;
+        //imageTarget.GetComponent<ImageTargetBehaviour>().enabled = false;
         imageTarget.GetComponent<Behaviour>().enabled = false;
         imageTarget.SetActive(false);
 
