@@ -6133,7 +6133,7 @@ MonoBehaviour:
   robot: {fileID: 1015017068}
   renderMode: 1
   ground: {fileID: 490889719}
-  steps: 10
+  steps: 15
   plannerServiceName: baxter_unity_motion_planner
   jointStateServiceName: baxter_joint_states
   pick: {fileID: 1217982990}
