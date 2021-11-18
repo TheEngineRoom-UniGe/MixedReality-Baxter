@@ -29,6 +29,7 @@ public class BaxterROSInterface : MonoBehaviour
     // Materials and urdf
     public UrdfRobot urdfRobot;
     public Material drawingMat;
+    public GameObject ghostPrefab;
 
     // Offset variables for picking and placing objects
     private readonly Vector3 liftOffset = Vector3.up * 0.1f;
@@ -88,7 +89,7 @@ public class BaxterROSInterface : MonoBehaviour
 
         // Instantiate Baxter Controller
         controller = gameObject.AddComponent<BaxterController>();
-        controller.Init(robot, steps, urdfRobot, drawingMat, renderMode);
+        controller.Init(robot, steps, urdfRobot, drawingMat, ghostPrefab, renderMode);
         
         // Request initial joint position from real robot controller
         var request = new JointStateServiceRequest();

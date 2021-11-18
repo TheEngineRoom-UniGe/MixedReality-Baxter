@@ -6133,13 +6133,14 @@ MonoBehaviour:
   robot: {fileID: 1015017068}
   renderMode: 1
   ground: {fileID: 490889719}
-  steps: 15
+  steps: 10
   plannerServiceName: baxter_unity_motion_planner
   jointStateServiceName: baxter_joint_states
   pick: {fileID: 1217982990}
   place: {fileID: 1859682172}
   urdfRobot: {fileID: 1015017071}
   drawingMat: {fileID: 2100000, guid: 4149bfa8896a3154198244f097af4de8, type: 2}
+  ghostPrefab: {fileID: 0}
   imageTarget: {fileID: 1015223675}
   planButton: {fileID: 1218489143}
   backButton: {fileID: 594743897}

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Linq;
+using System.Collections.Generic;
 
 using RosMessageTypes.BaxterUnityTest;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
@@ -30,6 +31,8 @@ public class BaxterController : MonoBehaviour
     private ArticulationBody[] rightJointArticulationBodies;
     private ArticulationBody[] leftHand;
     private ArticulationBody[] rightHand;
+    private GameObject leftGripper;
+    private GameObject rightGripper;
 
     // Hardcoded variables needed for referencing joints indices
     private double[] restPosition;
@@ -68,6 +71,8 @@ public class BaxterController : MonoBehaviour
     private Drawing3d drawing3;
     private JointState jointState;
     private Material mat;
+    private GameObject ghostPrefab;
+    private List<GameObject> instantiatedGhosts;
 
     private enum RenderModes
     {
@@ -85,13 +90,14 @@ public class BaxterController : MonoBehaviour
         Return
     };
 
-    public void Init(GameObject baxter, int steps, UrdfRobot urdfRobot, Material mat, int renderMode)
+    public void Init(GameObject baxter, int steps, UrdfRobot urdfRobot, Material mat, GameObject ghostPrefab, int renderMode)
     {
         this.baxter = baxter;
         this.steps = steps;
         this.urdfRobot = urdfRobot;
         this.mat = mat;
         this.renderMode = renderMode;
+        this.ghostPrefab = ghostPrefab;
 
         GetRobotReference();
 
@@ -99,6 +105,7 @@ public class BaxterController : MonoBehaviour
 
         drawing3 = Drawing3d.Create(10.0f, mat);
         jointState = new JointState();
+        instantiatedGhosts = new List<GameObject>();
     }
 
     private void GetRobotReference()
@@ -127,13 +134,15 @@ public class BaxterController : MonoBehaviour
         leftJointArticulationBodies[6] = baxter.transform.Find(wrist).GetComponent<ArticulationBody>();
 
         string hand = wrist + "/" + side + "_hand";
+        string gripper_base = hand + "/" + side + "_gripper_base";
+        leftGripper = baxter.transform.Find(gripper_base + "/" + side + "_gripper").gameObject;
         // Find left and right fingers
-        string right_gripper = hand + "/" + side + "_gripper_base/l_gripper_r_finger";
-        string left_gripper = hand + "/" + side + "_gripper_base/l_gripper_l_finger";
+        string right_gripper_finger = gripper_base + "/l_gripper_r_finger";
+        string left_gripper_finger =  gripper_base + "/l_gripper_l_finger";
 
         leftHand = new ArticulationBody[2];
-        leftHand[0] = baxter.transform.Find(left_gripper).GetComponent<ArticulationBody>();
-        leftHand[1] = baxter.transform.Find(right_gripper).GetComponent<ArticulationBody>();
+        leftHand[0] = baxter.transform.Find(left_gripper_finger).GetComponent<ArticulationBody>();
+        leftHand[1] = baxter.transform.Find(right_gripper_finger).GetComponent<ArticulationBody>();
 
         side = "right";
         rightJointArticulationBodies = new ArticulationBody[numRobotJoints];
@@ -159,13 +168,15 @@ public class BaxterController : MonoBehaviour
         rightJointArticulationBodies[6] = baxter.transform.Find(wrist).GetComponent<ArticulationBody>();
 
         hand = wrist + "/" + side + "_hand";
+        gripper_base = hand + "/" + side + "_gripper_base";
+        rightGripper = baxter.transform.Find(gripper_base + "/" + side + "_gripper").gameObject;
         // Find left and right fingers
-        right_gripper = hand + "/" + side + "_gripper_base/r_gripper_r_finger";
-        left_gripper = hand + "/" + side + "_gripper_base/r_gripper_l_finger";
+        right_gripper_finger = gripper_base + "/r_gripper_r_finger";
+        left_gripper_finger =  gripper_base + "/r_gripper_l_finger";
 
         rightHand = new ArticulationBody[2];
-        rightHand[0] = baxter.transform.Find(left_gripper).GetComponent<ArticulationBody>();
-        rightHand[1] = baxter.transform.Find(right_gripper).GetComponent<ArticulationBody>();
+        rightHand[0] = baxter.transform.Find(left_gripper_finger).GetComponent<ArticulationBody>();
+        rightHand[1] = baxter.transform.Find(right_gripper_finger).GetComponent<ArticulationBody>();
     }
 
     public void SpawnRobotAndInterface(Vector3 spawnPosition)
@@ -337,9 +348,11 @@ public class BaxterController : MonoBehaviour
         var arm = response.arm_trajectory.arm;
         var initialJointConfig = InitialJointConfig(arm);
         double[] lastJointState = initialJointConfig.angles;
+        var gripper = leftGripper;
 
         var doDraw = false;
         var red = 0.5471f;
+        var drawTime = 20.0f;
         int minN = 6;
         int sign = 1;
         int thirdLength = 1;
@@ -351,6 +364,7 @@ public class BaxterController : MonoBehaviour
         if (arm == "right")
         {
             sign = -1;
+            gripper = rightGripper;
             jointState.name = right_joint_names;
             jointArticulationBodies = rightJointArticulationBodies;
         }
@@ -381,6 +395,15 @@ public class BaxterController : MonoBehaviour
                     doDraw = true;
                 }
 
+                for (int joint = 0; joint < jointArticulationBodies.Length; joint++)
+                {
+                    var joint1XDrive = jointArticulationBodies[joint].xDrive;
+                    joint1XDrive.target = (float) result[joint];
+                    jointArticulationBodies[joint].xDrive = joint1XDrive;
+                }
+
+                yield return new WaitForSeconds(jointAssignmentWait * 10.0f);
+
                 lastJointState = result;
 
                 if (doDraw)
@@ -395,7 +418,13 @@ public class BaxterController : MonoBehaviour
                         }
 
                     }
-                    drawing3 = Drawing3d.Create(20.0f, mat);
+                    if(poseIndex > (int)Poses.Grasp && poseIndex < (int)Poses.Return)
+                    {
+                        var newGo = Instantiate(ghostPrefab, gripper.transform.position, Quaternion.identity);
+                        instantiatedGhosts.Add(newGo);
+                    }
+
+                    drawing3 = Drawing3d.Create(drawTime, mat);
                     robotVisualization.DrawGhost(drawing3, jointState, new Color(red, 0, 0, 1.0f));
                     red += 0.02f;
 
@@ -403,6 +432,12 @@ public class BaxterController : MonoBehaviour
                 }
             }
         }
+        yield return new WaitForSeconds(drawTime);
+        foreach(GameObject go in instantiatedGhosts)
+        {
+            Destroy(go);
+        }
+        instantiatedGhosts.Clear();
     }
 
     private IEnumerator ExecuteAnticipatoryTrajectory(ActionServiceResponse response)
