@@ -22,9 +22,15 @@ public class BaxterROSInterface : MonoBehaviour
     public string plannerServiceName = "baxter_unity_motion_planner";
     public string jointStateServiceName = "baxter_joint_states";
 
-    // Pick and place objects (test)
-    public GameObject pick;
-    public GameObject place;
+    // Ojects to pick and place/handover
+    public GameObject screwdriver;
+    public GameObject stoolSideLeft;
+    public GameObject screwbox1;
+    public GameObject screwbox2;
+    public GameObject screwbox3;
+
+    public GameObject handoverPositionLeft;
+    public GameObject placeObject;
 
     // Materials and urdf
     public UrdfRobot urdfRobot;
@@ -203,7 +209,7 @@ public class BaxterROSInterface : MonoBehaviour
         Quaternion pickOrientation;
         Quaternion placeOrientation;
 
-        pickPosition = pick.transform.localPosition + liftOffset /*+ objectsGraspOffsets[ID]*/;
+        pickPosition = screwbox3.transform.localPosition + liftOffset /*+ objectsGraspOffsets[ID]*/;
 
         string arm = "left";
         if(pickPosition.x > 0)
@@ -213,14 +219,9 @@ public class BaxterROSInterface : MonoBehaviour
         pickOrientation = Quaternion.Euler(180, 0, 0);
 
         // Place Pose
-        var placeObj = place;
-        /*if (pickPosition.x > 0)
-        {
-            placeObj = placePoses[1];
-            arm = "right";
-        }*/
-        placePosition = placeObj.transform.localPosition + liftOffset;
+        placePosition = placeObject.transform.localPosition + liftOffset;
         placeOrientation = pickOrientation;
+        //placeOrientation = Quaternion.Euler(-90.0f, 90.0f, 90.0f);
 
         ActionServiceRequest request = null;
         request = controller.PlanningRequest(arm, pickPosition, placePosition, pickOrientation, placeOrientation);
