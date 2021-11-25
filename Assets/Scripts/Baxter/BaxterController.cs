@@ -16,16 +16,16 @@ using UnityEngine;
 
 public class BaxterController : MonoBehaviour
 {
-    // Timing variables for rendering trajectory
+    // Timing variables for rendering trajectories
     private float jointAssignmentWait = 0.005f;
-    private static float placeWait = 8.0f;
-    private float handoverPoseWait = 1.5f * placeWait;
+    private float placeWait = 12.0f;
+    private float drawTime = 12.0f;
 
     // Robot
     private GameObject baxter;
-    private int renderMode;
     private UrdfRobot urdfRobot;
     private int numRobotJoints = 7;
+    private int renderMode;
 
     // Articulation Bodies
     private ArticulationBody[] leftJointArticulationBodies;
@@ -71,13 +71,12 @@ public class BaxterController : MonoBehaviour
     private RobotVisualization robotVisualization;
     private Drawing3d drawing3;
     private Material mat;
+    private int minN = 6;
     private float red = 0.5471f;
-    private float drawTime = 20.0f;
+    private GameObject[] ghostPrefabs;
+    private List<GameObject> instantiatedGhosts;
 
     private JointState jointState;
-
-    private GameObject ghostPrefab;
-    private List<GameObject> instantiatedGhosts;
 
     private enum RenderModes
     {
@@ -95,14 +94,14 @@ public class BaxterController : MonoBehaviour
         Return
     };
 
-    public void Init(GameObject baxter, int steps, UrdfRobot urdfRobot, Material mat, GameObject ghostPrefab, int renderMode)
+    public void Init(GameObject baxter, int steps, UrdfRobot urdfRobot, Material mat, GameObject[] ghostPrefabs, int renderMode)
     {
         this.baxter = baxter;
         this.steps = steps;
         this.urdfRobot = urdfRobot;
         this.mat = mat;
         this.renderMode = renderMode;
-        this.ghostPrefab = ghostPrefab;
+        this.ghostPrefabs = ghostPrefabs;
 
         GetRobotReference();
 
@@ -356,12 +355,30 @@ public class BaxterController : MonoBehaviour
         double[] lastJointState = initialJointConfig.angles;
         var gripper = leftGripper;
 
-        var doDraw = false;
+        GameObject ghostPrefab = null;
+        if(response.action == "pick_and_place")
+        {
+            if(response.seq < 2)
+            {
+                ghostPrefab = ghostPrefabs[0];
+            }
+            else
+            {
+                ghostPrefab = ghostPrefabs[0];
+            }
+        }
 
-        int minN = 6;
-        int sign = 1;
-        /*int thirdLength = 1;
-        int halfLength = 1;*/
+        else if(response.action == "component_handover")
+        {
+            ghostPrefab = ghostPrefabs[1];
+        }
+        else if(response.action == "tool_handover")
+        {
+            ghostPrefab = ghostPrefabs[2];
+        }
+        
+        var doDraw = false;
+        var sign = 1;
 
         // For every trajectory plan returned
         jointState.name = left_joint_names;
@@ -373,32 +390,21 @@ public class BaxterController : MonoBehaviour
             jointState.name = right_joint_names;
             jointArticulationBodies = rightJointArticulationBodies;
         }
-        yield return new WaitForSeconds(0.1f);
+        
         for (int poseIndex = 0; poseIndex < response.arm_trajectory.trajectory.Length; poseIndex++)
         {
-            // If trajectory is short, draw one every two poses
-            /*if (response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length < minN)
-            {
-                halfLength = (int)Mathf.Floor(response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length / 3);
-            }
-            // If longer, draw one every three poses
-            else
-            {
-                thirdLength = (int)Mathf.Floor(response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length / 4);
-            }*/
-
             // For every robot pose in trajectory plan
             for (int jointConfigIndex = 0; jointConfigIndex < response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length; jointConfigIndex++)
             {
                 var jointPositions = response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points[jointConfigIndex].positions;
                 double[] result = jointPositions.Select(r => (double)r * Mathf.Rad2Deg).ToArray();
 
-                // If trajectory is short, draw one every 3 poses
+                // If trajectory is short, draw one every 2 poses
                 if (response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length < minN && jointConfigIndex % 3 == 0)
                 {
                     doDraw = true;
                 }
-                // If longer, draw one every 4 poses
+                // If longer, draw one every 3 poses
                 else if (response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length >= minN && jointConfigIndex % 4 == 0)
                 {
                     doDraw = true;
@@ -425,11 +431,11 @@ public class BaxterController : MonoBehaviour
                         {
                             jointState.position[k] += sign * Mathf.PI / 4.0f;
                         }
-
+                       
                     }
-                    if(poseIndex > (int)Poses.Grasp && poseIndex < (int)Poses.Return)
+                    if (poseIndex > (int)Poses.Grasp && poseIndex < (int)Poses.Return)
                     {
-                        var newGo = Instantiate(ghostPrefab, gripper.transform.position, Quaternion.identity);
+                        var newGo = Instantiate(ghostPrefab, gripper.transform.position, gripper.transform.rotation);
                         instantiatedGhosts.Add(newGo);
                     }
 
@@ -438,8 +444,10 @@ public class BaxterController : MonoBehaviour
 
                     doDraw = false;
                 }
+                
             }
         }
+        
         yield return new WaitForSeconds(drawTime);
         foreach(GameObject go in instantiatedGhosts)
         {
@@ -518,7 +526,7 @@ public class BaxterController : MonoBehaviour
             {
                 if (poseIndex == (int)Poses.Move)
                 {
-                    yield return new WaitForSeconds(handoverPoseWait);
+                    yield return new WaitForSeconds(placeWait);
                 }
                 else if (poseIndex == (int)Poses.Place)
                 {

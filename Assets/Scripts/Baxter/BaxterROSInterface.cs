@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
@@ -45,11 +46,10 @@ public class BaxterROSInterface : MonoBehaviour
     // Materials and URDF
     public UrdfRobot urdfRobot;
     public Material drawingMat;
-    public GameObject ghostPrefab;
+    public GameObject[] ghostPrefabs;
 
     // Offset variables for picking and placing objects
     private readonly Vector3 liftOffset = Vector3.up * 0.1f;
-    private readonly Vector3 dropOffset = Vector3.up * 0.02f;
     private readonly float depthOffset = 0.135f;
     private readonly float heightOffset = 0.295f;
 
@@ -88,7 +88,7 @@ public class BaxterROSInterface : MonoBehaviour
 
         // Instantiate Baxter Controller
         controller = gameObject.AddComponent<BaxterController>();
-        controller.Init(robot, steps, urdfRobot, drawingMat, ghostPrefab, renderMode);
+        controller.Init(robot, steps, urdfRobot, drawingMat, ghostPrefabs, renderMode);
 
         // Fill arrays with scene objects
         tools = new GameObject[1];

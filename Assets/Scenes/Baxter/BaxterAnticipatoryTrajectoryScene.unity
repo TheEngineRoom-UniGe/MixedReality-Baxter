@@ -498,7 +498,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 100832379}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.05, y: 0.79, z: 0.496}
+  m_LocalPosition: {x: -0.691, y: 0.79, z: 0.524}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 205314974}
@@ -6308,7 +6308,7 @@ MonoBehaviour:
   robot: {fileID: 1015017068}
   ground: {fileID: 490889719}
   renderMode: 1
-  steps: 10
+  steps: 30
   plannerServiceName: baxter_unity_motion_planner
   jointStateServiceName: baxter_joint_states
   nextActionTopicName: next_action
@@ -6323,7 +6323,7 @@ MonoBehaviour:
   placePositionMiddle: {fileID: 315548212}
   urdfRobot: {fileID: 1015017071}
   drawingMat: {fileID: 2100000, guid: 4149bfa8896a3154198244f097af4de8, type: 2}
-  ghostPrefab: {fileID: 0}
+  ghostPrefabs: []
   imageTarget: {fileID: 1015223675}
   backButton: {fileID: 594743897}
 --- !u!1001 &1083704224
@@ -8001,7 +8001,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7948544018254283667, guid: 99a63fafcaf3df84180a736e3ffd644e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.835
+      value: -0.776
       objectReference: {fileID: 0}
     - target: {fileID: 7948544018254283667, guid: 99a63fafcaf3df84180a736e3ffd644e, type: 3}
       propertyPath: m_LocalPosition.y
@@ -10964,7 +10964,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2137515043}
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -0.1, y: 1.2, z: 0.7}
+  m_LocalPosition: {x: -0.3, y: 1.3, z: 0.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 490889720}

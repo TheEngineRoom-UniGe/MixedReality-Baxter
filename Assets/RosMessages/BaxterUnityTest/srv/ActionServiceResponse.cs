@@ -13,17 +13,20 @@ namespace RosMessageTypes.BaxterUnityTest
         public const string k_RosMessageName = "baxter_unity_test/ActionService";
         public override string RosMessageName => k_RosMessageName;
 
+        public int seq;
         public string action;
         public PlannedTrajectoryMsg arm_trajectory;
 
         public ActionServiceResponse()
         {
+            this.seq = 0;
             this.action = "";
             this.arm_trajectory = new PlannedTrajectoryMsg();
         }
 
-        public ActionServiceResponse(string action, PlannedTrajectoryMsg arm_trajectory)
+        public ActionServiceResponse(int seq, string action, PlannedTrajectoryMsg arm_trajectory)
         {
+            this.seq = seq;
             this.action = action;
             this.arm_trajectory = arm_trajectory;
         }
@@ -32,12 +35,14 @@ namespace RosMessageTypes.BaxterUnityTest
 
         private ActionServiceResponse(MessageDeserializer deserializer)
         {
+            deserializer.Read(out this.seq);
             deserializer.Read(out this.action);
             this.arm_trajectory = PlannedTrajectoryMsg.Deserialize(deserializer);
         }
 
         public override void SerializeTo(MessageSerializer serializer)
         {
+            serializer.Write(this.seq);
             serializer.Write(this.action);
             serializer.Write(this.arm_trajectory);
         }
@@ -45,6 +50,7 @@ namespace RosMessageTypes.BaxterUnityTest
         public override string ToString()
         {
             return "ActionServiceResponse: " +
+            "\nseq: " + seq.ToString() +
             "\naction: " + action.ToString() +
             "\narm_trajectory: " + arm_trajectory.ToString();
         }
