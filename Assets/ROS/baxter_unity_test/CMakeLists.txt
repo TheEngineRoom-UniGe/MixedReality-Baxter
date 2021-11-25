@@ -31,6 +31,7 @@ catkin_package()
 
 catkin_install_python(PROGRAMS
   scripts/motion_planner.py
+  scripts/plan_manager.py
   scripts/joint_states_service.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

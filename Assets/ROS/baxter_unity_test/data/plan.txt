@@ -1,0 +1,2 @@
+component_handover 1 
+pick_and_place 0

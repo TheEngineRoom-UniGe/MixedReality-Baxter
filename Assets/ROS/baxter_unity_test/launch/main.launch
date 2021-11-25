@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <launch>
+    <arg name="file_name" default="test"/>
+
     <rosparam file="$(find baxter_unity_test)/config/params.yaml" command="load"/>
     
     <node name="server_endpoint" pkg="ros_tcp_endpoint" type="default_server_endpoint.py" args="--wait" output="screen" respawn="true" />
@@ -7,14 +9,16 @@
     <node name="joint_states_service" pkg="baxter_unity_test" type="joint_states_service.py" output="screen" />
     
     <group ns="left_group">
-	  <node name="motion_planner_left" pkg="baxter_hrc" type="motion_planner.py" args="--limb left --offset 0.155 --obstacle 0.6" output="screen"  />
+	  <node name="motion_planner_left" pkg="baxter_unity_test" type="motion_planner.py" args="--limb left --offset 0.1525 --obstacle 0.625" output="screen"  />
 	  <include file="$(find baxter_unity_test)/launch/demo.launch" />
     </group>
     
     <group ns="right_group">
-	  <node name="motion_planner_right" pkg="baxter_hrc" type="motion_planner.py" args="--limb right --offset 0.15 --obstacle 0.65" output="screen"  />
+	  <node name="motion_planner_right" pkg="baxter_unity_test" type="motion_planner.py" args="--limb right --offset 0.15 --obstacle 0.65" output="screen"  />
 	  <include file="$(find baxter_unity_test)/launch/demo.launch" />
     </group>
+    
+    <node name="plan_manager" pkg="baxter_unity_test" type="plan_manager.py" args="--file_name $(arg file_name)" output="screen" />
     
     <node name="world_to_base" pkg="tf" type="static_transform_publisher" args="0 0 0.92 0 0 0 world base 10" />
 </launch>

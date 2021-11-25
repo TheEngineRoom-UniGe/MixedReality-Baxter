@@ -11,7 +11,7 @@ import moveit_commander
 from moveit_commander.conversions import pose_to_list
 
 from std_msgs.msg import String
-from moveit_msgs.msg import Constraints, JointConstraint, PositionConstraint, OrientationConstraint, BoundingVolume, RobotState
+from moveit_msgs.msg import RobotState
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Quaternion, Pose, PoseStamped
 
@@ -28,7 +28,7 @@ class MotionPlanner:
         group_name = self.limb + "_arm"
         self.move_group = moveit_commander.MoveGroupCommander(group_name)
 
-        #self.publisher = rospy.Publisher('baxter_moveit_trajectory', PlannedTrajectory, queue_size=10)
+        self.publisher = rospy.Publisher('baxter_moveit_trajectory', PlannedTrajectory, queue_size=10)
         
     # Plan straight line trajectory
     def plan_cartesian_trajectory(self, destination_pose, start_joint_angles):
@@ -99,24 +99,24 @@ class MotionPlanner:
 
         return plan[1]
 
-    # Dispatcher callback handling different operations upon request
+    # Dispatcher callback handling different actions upon request
     def dispatcher(self, req):
-        if(req.operation == "pick_and_place" or req.operation == "put_back"):
+        if(req.action == "pick_and_place" or req.action == "put_back"):
             return self.pick_and_place(req)
-        elif(req.operation == "tool_handover"):
+        elif(req.action == "tool_handover"):
             return self.tool_handover(req)
-        elif(req.operation == "component_handover"):
+        elif(req.action == "component_handover"):
             return self.component_handover(req)
         else:
             return None
 
     # Plan pick and place action
     def pick_and_place(self, req):
-        #op = req.operation
+        op = req.action
 
         response = ActionServiceResponse()
-        #response.operation = op
-        response.arm = self.limb
+        response.action = op
+        response.arm_trajectory.arm = self.limb
 
         # Initial joint configuration
         current_robot_joint_configuration = [math.radians(req.joints.angles[i]) for i in range(7)]
@@ -126,7 +126,7 @@ class MotionPlanner:
         pre_grasp_traj = self.plan_cartesian_trajectory(req.pick_pose, current_robot_joint_configuration)
 
         previous_ending_joint_angles = pre_grasp_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(pre_grasp_traj)
+        response.arm_trajectory.trajectory.append(pre_grasp_traj)
 
         # Grasp - lower gripper so that fingers are on either side of object
         pick_pose = copy.deepcopy(req.pick_pose)
@@ -134,51 +134,48 @@ class MotionPlanner:
         grasp_traj = self.plan_cartesian_trajectory(pick_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = grasp_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(grasp_traj)
+        response.arm_trajectory.trajectory.append(grasp_traj)
 
         # Pick Up - raise gripper back to the pre grasp position
         pick_up_traj = self.plan_cartesian_trajectory(req.pick_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = pick_up_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(pick_up_traj)
+        response.arm_trajectory.trajectory.append(pick_up_traj)
 
         # Move gripper to desired placement position
         move_traj = self.plan_cartesian_trajectory(req.place_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = move_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(move_traj)
+        response.arm_trajectory.trajectory.append(move_traj)
 
         # Place - Descend and leave object in the desired position
         place_pose = copy.deepcopy(req.place_pose)
-        place_pose.position.z -= self.height_offset
+        place_pose.position.z -= self.height_offset*0.8
         place_traj = self.plan_cartesian_trajectory(place_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = place_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(place_traj)
+        response.arm_trajectory.trajectory.append(place_traj)
             
         # Return to home pose
         return_home_traj = self.plan_return_to_home(initial_joint_configuration, previous_ending_joint_angles)
-        response.trajectories.append(return_home_traj)
+        response.arm_trajectory.trajectory.append(return_home_traj)
 
         self.move_group.clear_pose_targets()
 
-        '''
         jointsMsg = PlannedTrajectory()
-        jointsMsg.operation = op
         jointsMsg.arm = self.limb
-        jointsMsg.trajectory = response.trajectories
+        jointsMsg.trajectory = response.arm_trajectory.trajectory
         self.publisher.publish(jointsMsg)
-        '''
-
+        
         return response
   
     # Plan tool handover action
     def tool_handover(self, req):
-        op = req.operation
+        op = req.action
         
         response = ActionServiceResponse()
-        response.operation = op
-        response.arm = self.limb
+        response.action = op
+        response.arm_trajectory.arm = self.limb
 
         # Initial joint configuration
         current_robot_joint_configuration = [math.radians(req.joints.angles[i]) for i in range(7)]
@@ -188,7 +185,7 @@ class MotionPlanner:
         pre_grasp_traj = self.plan_cartesian_trajectory(req.pick_pose, current_robot_joint_configuration)
 
         previous_ending_joint_angles = pre_grasp_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(pre_grasp_traj)
+        response.arm_trajectory.trajectory.append(pre_grasp_traj)
 
         # Grasp - lower gripper so that fingers are on either side of object
         pick_pose = copy.deepcopy(req.pick_pose)
@@ -196,7 +193,7 @@ class MotionPlanner:
         grasp_traj = self.plan_cartesian_trajectory(pick_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = grasp_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(grasp_traj)
+        response.arm_trajectory.trajectory.append(grasp_traj)
 
         # Pick Up - raise gripper back to the pre grasp position
         lift_pose = copy.deepcopy(req.pick_pose)
@@ -204,35 +201,35 @@ class MotionPlanner:
         lift_up_traj = self.plan_cartesian_trajectory(lift_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = lift_up_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(lift_up_traj)
+        response.arm_trajectory.trajectory.append(lift_up_traj)
         
         # Handover - move gripper to desired handover position
         handover_traj = self.plan_to_pose(req.place_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = handover_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(handover_traj)
+        response.arm_trajectory.trajectory.append(handover_traj)
         
         # Return to home pose
         return_home_traj = self.plan_return_to_home(initial_joint_configuration, previous_ending_joint_angles)
-        response.trajectories.append(return_home_traj)
+        response.arm_trajectory.trajectory.append(return_home_traj)
 
         self.move_group.clear_pose_targets()
         
         jointsMsg = PlannedTrajectory()
-        jointsMsg.operation = op
+        #jointsMsg.action = op
         jointsMsg.arm = self.limb
-        jointsMsg.trajectory = response.trajectories
+        jointsMsg.trajectory = response.arm_trajectory.trajectory
         self.publisher.publish(jointsMsg)
 
         return response
 
     # Plan Component handover action
     def component_handover(self, req):
-        op = req.operation
+        op = req.action
 
         response = ActionServiceResponse()
-        response.operation = op
-        response.arm = self.limb
+        response.action = op
+        response.arm_trajectory.arm = self.limb
 
         # Initial joint configuration
         current_robot_joint_configuration = [math.radians(req.joints.angles[i]) for i in range(7)]
@@ -242,7 +239,7 @@ class MotionPlanner:
         pre_grasp_traj = self.plan_cartesian_trajectory(req.pick_pose, current_robot_joint_configuration)
 
         previous_ending_joint_angles = pre_grasp_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(pre_grasp_traj)
+        response.arm_trajectory.trajectory.append(pre_grasp_traj)
 
         # Grasp - lower gripper so that fingers are on either side of object
         pick_pose = copy.deepcopy(req.pick_pose)
@@ -250,20 +247,20 @@ class MotionPlanner:
         grasp_traj = self.plan_cartesian_trajectory(pick_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = grasp_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(grasp_traj)
+        response.arm_trajectory.trajectory.append(grasp_traj)
 
         # Pick Up - raise gripper back to the pre grasp position
         lift_pose = copy.deepcopy(req.pick_pose)
         lift_up_traj = self.plan_cartesian_trajectory(lift_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = lift_up_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(lift_up_traj)
+        response.arm_trajectory.trajectory.append(lift_up_traj)
 
         # Handover - move gripper to desired handover position
         handover_traj = self.plan_cartesian_trajectory(req.place_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = handover_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(handover_traj)
+        response.arm_trajectory.trajectory.append(handover_traj)
 
         # Put back - take object back to its original pose
         put_back_pose = copy.deepcopy(req.pick_pose)
@@ -271,18 +268,18 @@ class MotionPlanner:
         put_back_traj = self.plan_cartesian_trajectory(put_back_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = put_back_traj.joint_trajectory.points[-1].positions
-        response.trajectories.append(put_back_traj)
+        response.arm_trajectory.trajectory.append(put_back_traj)
 
         # Return to home pose
         return_home_traj = self.plan_return_to_home(initial_joint_configuration, previous_ending_joint_angles)
-        response.trajectories.append(return_home_traj)
+        response.arm_trajectory.trajectory.append(return_home_traj)
 
         self.move_group.clear_pose_targets()
 
         jointsMsg = PlannedTrajectory()
-        jointsMsg.operation = op
+        #jointsMsg.action = op
         jointsMsg.arm = self.limb
-        jointsMsg.trajectory = response.trajectories
+        jointsMsg.trajectory = response.arm_trajectory.trajectory
         self.publisher.publish(jointsMsg)
 
         return response
@@ -352,7 +349,7 @@ def main():
 
     # Define motion planner object with argument parsed
     motion_planner = MotionPlanner(limb, offset)
-    s = rospy.Service('baxter_unity_motion_planner', ActionService, motion_planner.pick_and_place)
+    s = rospy.Service('/' + limb + '_group/baxter_unity_motion_planner', ActionService, motion_planner.dispatcher)
         
     print("Ready to plan")
     rospy.spin()

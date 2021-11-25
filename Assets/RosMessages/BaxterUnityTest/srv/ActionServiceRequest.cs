@@ -14,6 +14,7 @@ namespace RosMessageTypes.BaxterUnityTest
         public override string RosMessageName => k_RosMessageName;
 
         public string arm;
+        public string action;
         public ArmJointsMsg joints;
         public Geometry.PoseMsg pick_pose;
         public Geometry.PoseMsg place_pose;
@@ -21,14 +22,16 @@ namespace RosMessageTypes.BaxterUnityTest
         public ActionServiceRequest()
         {
             this.arm = "";
+            this.action = "";
             this.joints = new ArmJointsMsg();
             this.pick_pose = new Geometry.PoseMsg();
             this.place_pose = new Geometry.PoseMsg();
         }
 
-        public ActionServiceRequest(string arm, ArmJointsMsg joints, Geometry.PoseMsg pick_pose, Geometry.PoseMsg place_pose)
+        public ActionServiceRequest(string arm, string action, ArmJointsMsg joints, Geometry.PoseMsg pick_pose, Geometry.PoseMsg place_pose)
         {
             this.arm = arm;
+            this.action = action;
             this.joints = joints;
             this.pick_pose = pick_pose;
             this.place_pose = place_pose;
@@ -39,6 +42,7 @@ namespace RosMessageTypes.BaxterUnityTest
         private ActionServiceRequest(MessageDeserializer deserializer)
         {
             deserializer.Read(out this.arm);
+            deserializer.Read(out this.action);
             this.joints = ArmJointsMsg.Deserialize(deserializer);
             this.pick_pose = Geometry.PoseMsg.Deserialize(deserializer);
             this.place_pose = Geometry.PoseMsg.Deserialize(deserializer);
@@ -47,6 +51,7 @@ namespace RosMessageTypes.BaxterUnityTest
         public override void SerializeTo(MessageSerializer serializer)
         {
             serializer.Write(this.arm);
+            serializer.Write(this.action);
             serializer.Write(this.joints);
             serializer.Write(this.pick_pose);
             serializer.Write(this.place_pose);
@@ -56,6 +61,7 @@ namespace RosMessageTypes.BaxterUnityTest
         {
             return "ActionServiceRequest: " +
             "\narm: " + arm.ToString() +
+            "\naction: " + action.ToString() +
             "\njoints: " + joints.ToString() +
             "\npick_pose: " + pick_pose.ToString() +
             "\nplace_pose: " + place_pose.ToString();

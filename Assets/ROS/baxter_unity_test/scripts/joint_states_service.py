@@ -17,7 +17,7 @@ def get_joint_states(req):
         return response
     except ROSException:
         # Fixed starting position in case real robot is not connected
-        response.joint_state_msg.position = [0, 0, 0, 0.75, 0, -0.55, 0, 1.26, 0, 0, 0.75, 0, -0.55, 0, 1.26, 0, 0]
+        response.joint_state_msg.position = [0, 0, -1.2, 1.9, 0, -1, 0.67, 1.03, -0.5, 1.2, 1.9, 0, -1, -0.67, 1.03, 0.5, 0]
         return response
 
 if __name__ == '__main__':

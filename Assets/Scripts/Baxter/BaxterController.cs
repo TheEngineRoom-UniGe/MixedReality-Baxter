@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 using RosMessageTypes.BaxterUnityTest;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
+
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 using JointState = RosMessageTypes.Sensor.JointStateMsg;
@@ -17,8 +18,8 @@ public class BaxterController : MonoBehaviour
 {
     // Timing variables for rendering trajectory
     private float jointAssignmentWait = 0.005f;
-    /*private static float placeWait = 8.0f;
-    private float handoverPoseWait = 1.5f * placeWait;*/
+    private static float placeWait = 8.0f;
+    private float handoverPoseWait = 1.5f * placeWait;
 
     // Robot
     private GameObject baxter;
@@ -297,9 +298,10 @@ public class BaxterController : MonoBehaviour
     }
 
     // Routine to generate motion planning request
-    public ActionServiceRequest PlanningRequest(string arm, Vector3 pickPos, Vector3 placePos, Quaternion pickOr, Quaternion placeOr)
+    public ActionServiceRequest PlanningRequest(string arm, string op, Vector3 pickPos, Vector3 placePos, Quaternion pickOr, Quaternion placeOr)
     {
         ActionServiceRequest request = new ActionServiceRequest();
+        request.action = op;
         request.arm = arm;
 
         if (arm == "left")
@@ -358,8 +360,8 @@ public class BaxterController : MonoBehaviour
 
         int minN = 6;
         int sign = 1;
-        int thirdLength = 1;
-        int halfLength = 1;
+        /*int thirdLength = 1;
+        int halfLength = 1;*/
 
         // For every trajectory plan returned
         jointState.name = left_joint_names;
@@ -444,6 +446,7 @@ public class BaxterController : MonoBehaviour
             Destroy(go);
         }
         instantiatedGhosts.Clear();
+        EndTrajectoryExecution(arm);
     }
 
     private IEnumerator ExecuteAnticipatoryTrajectory(ActionServiceResponse response)
@@ -488,7 +491,7 @@ public class BaxterController : MonoBehaviour
 
             }
             // Make sure gripper is open at the beginning
-            if (poseIndex == (int)Poses.PreGrasp /*|| poseIndex == (int)Poses.Place*/)
+            if (poseIndex == (int)Poses.PreGrasp || poseIndex == (int)Poses.Place)
             {
                 yield return new WaitForSeconds(0.5f);
                 OpenGripper(arm);
@@ -499,19 +502,19 @@ public class BaxterController : MonoBehaviour
                 yield return new WaitForSeconds(0.5f);
                 CloseGripper(arm);
             }
-            // Handle different cases based on the executed operation
-            /*if (response.operation == "pick_and_place" && poseIndex == (int)Poses.Place)
+            // Handle different cases based on the executed action
+            if (response.action == "pick_and_place" && poseIndex == (int)Poses.Place)
             {
                 yield return new WaitForSeconds(placeWait);
                 EndTrajectoryExecution(arm);
             }
-            else if (response.operation == "tool_handover" && poseIndex == (int)Poses.Move)
+            else if (response.action == "tool_handover" && poseIndex == (int)Poses.Move)
             {
                 yield return new WaitForSeconds(placeWait);
                 EndTrajectoryExecution(arm);
 
             }
-            else if (response.operation == "component_handover")
+            else if (response.action == "component_handover")
             {
                 if (poseIndex == (int)Poses.Move)
                 {
@@ -523,15 +526,15 @@ public class BaxterController : MonoBehaviour
                     EndTrajectoryExecution(arm);
                 }
             }
-            else if (response.operation == "put_back" && poseIndex == (int)Poses.Place)
+            else if (response.action == "put_back" && poseIndex == (int)Poses.Place)
             {
                 yield return new WaitForSeconds(placeWait);
                 EndTrajectoryExecution(arm);
-            }*/
+            }
         }
     }
 
-    /*private void EndTrajectoryExecution(string arm)
+    private void EndTrajectoryExecution(string arm)
     {
         OpenGripper(arm);
         if (arm == "left")
@@ -540,5 +543,5 @@ public class BaxterController : MonoBehaviour
         }
         else
             rightCoroutineRunning = false;
-    }*/
+    }
 }
