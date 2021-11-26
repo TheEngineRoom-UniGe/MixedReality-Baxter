@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
@@ -30,8 +29,10 @@ public class BaxterROSInterface : MonoBehaviour
     // Tools
     public GameObject screwdriver;
 
-    // Pieces
+    // Wooden Pieces
     public GameObject stoolSideLeft;
+    public GameObject piece1;
+    public GameObject piece2;
 
     // Components
     public GameObject screwbox1;
@@ -99,8 +100,10 @@ public class BaxterROSInterface : MonoBehaviour
         components[1] = screwbox2;
         components[2] = screwbox3;
 
-        pieces = new GameObject[1];
-        pieces[0] = stoolSideLeft;
+        pieces = new GameObject[3];
+        pieces[0] = piece1;
+        pieces[1] = piece2;
+        pieces[2] = stoolSideLeft;
 
         // Request initial joint position from real robot controller
         var request = new JointStateServiceRequest();
@@ -159,14 +162,6 @@ public class BaxterROSInterface : MonoBehaviour
             // Place Pose
             placePosition = placePositionMiddle.transform.localPosition + liftOffset;
             placeOrientation = pickOrientation;
-            /*if (ID == 0)
-            {
-                placeOrientation = Quaternion.Euler(180, -90, 0);
-            }
-            else if (ID == 1 || ID == 2)
-            {
-                placeOrientation = Quaternion.Euler(180, 90, 0);
-            }*/
         }
         else if (op == "tool_handover")
         {
@@ -211,23 +206,8 @@ public class BaxterROSInterface : MonoBehaviour
             placeOrientation = Quaternion.Euler(180, 90, 0);
             
         }
-        else // Put back case
+        else // Default case
         {
-            /*toolsIDQueue.Enqueue(ID);
-
-            var putBackPickPose = placePoses[4];
-            if (toolsInitialPositions[ID].x > 0)
-            {
-                putBackPickPose = placePoses[5];
-                arm = "right";
-            }
-
-            tools[ID].transform.localPosition = putBackPickPose.transform.localPosition;
-            tools[ID].transform.localRotation = toolsInitialRotations[ID];
-            // Reactivate tool and make it physically interactable again
-            tools[ID].GetComponent<Rigidbody>().isKinematic = false;
-            tools[ID].SetActive(true);*/
-            
             // Pick Pose
             pickPosition = placePositionMiddle.transform.localPosition + liftOffset;
             pickOrientation = Quaternion.Euler(-180, 0, 0);
@@ -238,15 +218,24 @@ public class BaxterROSInterface : MonoBehaviour
             placeOrientation = pickOrientation;
         }
 
+        // Choose for which arm to plan based on position of object to pick
         if (pickPosition.x > 0)
         {
             arm = "right";
         }
 
+        // Send motion planning request to ROS
         ActionServiceRequest request = null;
         request = controller.PlanningRequest(arm, op, pickPosition, placePosition, pickOrientation, placeOrientation);
         ros.SendServiceMessage<ActionServiceResponse>(request.arm + "_group/" + plannerServiceName, request, controller.ROSServiceResponse);
 
+        if(renderMode == (int)BaxterController.RenderModes.FinalPose)
+        {
+            yield return new WaitForSeconds(2.0f);
+            DeleteHologram(op);
+        }
+
+        // Wait for completion of trajectory execution
         if(arm == "left")
         {
             while (controller.leftCoroutineRunning)
@@ -263,7 +252,16 @@ public class BaxterROSInterface : MonoBehaviour
             }
             ros.Publish(actionDoneTopicName, new Bool());
         }
-        
+
+        if (renderMode != (int)BaxterController.RenderModes.FinalPose)
+        {
+            DeleteHologram(op);
+        }
+    }
+
+    private void DeleteHologram(string op)
+    {
+        // Remove hologram of current object after action is done
         if (op == "pick_and_place")
         {
             var currentPickID = (int)piecesIDQueue.Dequeue();

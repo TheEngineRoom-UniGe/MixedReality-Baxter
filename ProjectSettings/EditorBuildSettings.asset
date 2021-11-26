@@ -17,6 +17,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Baxter/BaxterAnticipatoryTrajectoryScene.unity
     guid: a1d2e786f081fc045bfb88e427ccfceb
+  - enabled: 1
+    path: Assets/Scenes/Baxter/BaxterFinalPoseScene.unity
+    guid: 6839ab9a5c503ce49b31047fe018a9c7
   m_configObjects:
     Unity.XR.WindowsMR.Settings: {fileID: 11400000, guid: cc7407aeb25dadd4d872d4690fc40b43, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: a4a2ec535f58d234cb1d884f85086016, type: 2}

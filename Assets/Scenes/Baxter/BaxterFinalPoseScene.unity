@@ -10953,7 +10953,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   robot: {fileID: 1327661474}
   ground: {fileID: 0}
-  renderMode: 0
+  renderMode: 1
   steps: 40
   plannerServiceName: baxter_unity_motion_planner
   jointStateServiceName: baxter_joint_states
