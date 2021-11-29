@@ -2,7 +2,7 @@ using System.Collections;
 
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
-using RosMessageTypes.BaxterUnityTest;
+using RosMessageTypes.BaxterUnity;
 using Unity.Robotics.UrdfImporter;
 
 using Bool = RosMessageTypes.Std.BoolMsg;

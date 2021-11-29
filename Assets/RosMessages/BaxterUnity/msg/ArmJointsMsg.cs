@@ -5,12 +5,12 @@ using System.Collections.Generic;
 using System.Text;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 
-namespace RosMessageTypes.BaxterUnityTest
+namespace RosMessageTypes.BaxterUnity
 {
     [Serializable]
     public class ArmJointsMsg : Message
     {
-        public const string k_RosMessageName = "baxter_unity_test/ArmJoints";
+        public const string k_RosMessageName = "baxter_unity/ArmJoints";
         public override string RosMessageName => k_RosMessageName;
 
         public double[] angles;

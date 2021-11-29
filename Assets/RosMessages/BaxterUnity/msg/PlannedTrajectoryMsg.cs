@@ -5,12 +5,12 @@ using System.Collections.Generic;
 using System.Text;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 
-namespace RosMessageTypes.BaxterUnityTest
+namespace RosMessageTypes.BaxterUnity
 {
     [Serializable]
     public class PlannedTrajectoryMsg : Message
     {
-        public const string k_RosMessageName = "baxter_unity_test/PlannedTrajectory";
+        public const string k_RosMessageName = "baxter_unity/PlannedTrajectory";
         public override string RosMessageName => k_RosMessageName;
 
         public string arm;

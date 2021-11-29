@@ -202,7 +202,7 @@ def main():
     rospy.init_node('plan_manager', disable_signals=True, log_level=rospy.FATAL)
 
     rospack = rospkg.RosPack()
-    pkg_path = rospack.get_path('baxter_unity_test')
+    pkg_path = rospack.get_path('baxter_unity')
 
     # Parse arguments from launch file
     arg_fmt = argparse.RawDescriptionHelpFormatter

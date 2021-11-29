@@ -2,7 +2,7 @@ using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 
-using RosMessageTypes.BaxterUnityTest;
+using RosMessageTypes.BaxterUnity;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 
 using Quaternion = UnityEngine.Quaternion;
