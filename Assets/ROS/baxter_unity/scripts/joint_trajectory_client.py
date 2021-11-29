@@ -20,7 +20,7 @@ from trajectory_msgs.msg import (
     JointTrajectoryPoint,
 )
 
-from baxter_hrc.msg import PlannedTrajectory
+from baxter_unity.msg import PlannedTrajectory
 
 from baxter_interface import CHECK_VERSION
 

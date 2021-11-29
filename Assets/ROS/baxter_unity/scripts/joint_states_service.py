@@ -3,7 +3,7 @@ import rospy
 from rospy.exceptions import ROSException
 
 from sensor_msgs.msg import JointState
-from baxter_unity_test.srv import JointStateService, JointStateServiceRequest, JointStateServiceResponse
+from baxter_unity.srv import JointStateService, JointStateServiceRequest, JointStateServiceResponse
 
 def get_joint_states(req):
 

@@ -17,7 +17,7 @@ from std_msgs.msg import String, Bool
 from sensor_msgs.msg import JointState, Image
 from geometry_msgs.msg import Quaternion, Pose, PoseStamped
 
-from baxter_unity_test.msg import PlannedTrajectory, NextAction
+from baxter_unity.msg import PlannedTrajectory, NextAction
 
 from cv_bridge import CvBridge
 
@@ -87,6 +87,8 @@ class PlanManager():
         self.plan_length = len(self.plan_steps)
         self.action_idx = 0
 
+        print("Ready to accept user inputs ...")
+
         '''
         # Publish start screen image on robot's display
         img = cv2.imread(pkg_path + "/images/start.png")
@@ -116,16 +118,11 @@ class PlanManager():
             image_pub.publish(img_msg)
 
 
-        elapsed = rospy.Time.now().secs - t_start.secs
-        logging.info("Action " + str(i+1) + " took: " + str(elapsed) + " seconds")
-        t_start = rospy.Time.now()
-
         # Publish end screen image to display at the end of planning steps
         img = cv2.imread(pkg_path + "/images/end.png")
         img_msg = CvBridge().cv2_to_imgmsg(img)
         image_pub.publish(img_msg)
         '''
-        print("Ready to accept user inputs ...")
 
     # Handles next action based on paused status
     def next_action_handler(self, msg):
@@ -142,11 +139,6 @@ class PlanManager():
 
             # Keep track of time elapsed from previous action
             if(self.action_idx == 0):
-                self.action_time = time.time()
-
-            elif(self.action_idx > 0):
-                elapsed_action_time = time.time() - self.action_time
-                self.logger.log("Action {0} took: {1} seconds".format(self.action_idx, elapsed_action_time))
                 self.action_time = time.time()
 
             instruction = self.plan_steps[self.action_idx].split()
@@ -177,7 +169,7 @@ class PlanManager():
 
         elif self.action_idx == self.plan_length:
             elapsed_action_time = time.time() - self.action_time
-            self.logger.log("Action {0} took: {1} seconds".format(self.action_idx, elapsed_action_time))
+            self.logger.log("Total Task Time: {0} seconds".format(elapsed_action_time))
 
             self.reader_task.terminate()
             self.thread.join()

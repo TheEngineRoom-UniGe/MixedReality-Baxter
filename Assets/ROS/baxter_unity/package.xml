@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>baxter_unity_test</name>
+  <name>baxter_unity</name>
   <version>0.0.0</version>
-  <description>The baxter_unity_test package</description>
+  <description>The baxter_unity package</description>
 
 
   <maintainer email="simone.maccio@edu.unige.it">Simone Macciò</maintainer>

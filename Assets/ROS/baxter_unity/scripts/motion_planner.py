@@ -15,8 +15,8 @@ from moveit_msgs.msg import RobotState
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Quaternion, Pose, PoseStamped
 
-from baxter_unity_test.msg import PlannedTrajectory
-from baxter_unity_test.srv import ActionService, ActionServiceRequest, ActionServiceResponse
+from baxter_unity.msg import PlannedTrajectory
+from baxter_unity.srv import ActionService, ActionServiceRequest, ActionServiceResponse
 
 
 class MotionPlanner:
@@ -24,6 +24,7 @@ class MotionPlanner:
     def __init__(self, limb, offset):
         self.limb = limb
         self.height_offset = offset
+        self.seq = 0
 
         group_name = self.limb + "_arm"
         self.move_group = moveit_commander.MoveGroupCommander(group_name)
@@ -63,7 +64,7 @@ class MotionPlanner:
         moveit_robot_state.joint_state = current_joint_state
         self.move_group.set_start_state(moveit_robot_state)
         self.move_group.set_pose_target(destination_pose)
-        self.move_group.set_goal_tolerance(10e-6)
+        self.move_group.set_goal_tolerance(10e-3)
         plan = self.move_group.plan()
 
         if not plan:
@@ -117,6 +118,8 @@ class MotionPlanner:
         response = ActionServiceResponse()
         response.action = op
         response.arm_trajectory.arm = self.limb
+        response.seq = self.seq
+        self.seq += 1
 
         # Initial joint configuration
         current_robot_joint_configuration = [math.radians(req.joints.angles[i]) for i in range(7)]
@@ -197,7 +200,7 @@ class MotionPlanner:
 
         # Pick Up - raise gripper back to the pre grasp position
         lift_pose = copy.deepcopy(req.pick_pose)
-        lift_pose.position.z += 0.20  # HARDCODED VALUE FOR NOW
+        lift_pose.position.z += self.height_offset  # HARDCODED VALUE FOR NOW
         lift_up_traj = self.plan_cartesian_trajectory(lift_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = lift_up_traj.joint_trajectory.points[-1].positions
@@ -264,7 +267,7 @@ class MotionPlanner:
 
         # Put back - take object back to its original pose
         put_back_pose = copy.deepcopy(req.pick_pose)
-        put_back_pose.position.z -= 0.9*self.height_offset
+        put_back_pose.position.z -= 0.8*self.height_offset
         put_back_traj = self.plan_cartesian_trajectory(put_back_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = put_back_traj.joint_trajectory.points[-1].positions
