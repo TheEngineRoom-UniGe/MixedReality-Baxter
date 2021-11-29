@@ -75,8 +75,6 @@ public class BaxterController : MonoBehaviour
     private float red = 0.5471f;
     private GameObject[] ghostPrefabs;
 
-    private JointState jointState;
-
     public enum RenderModes
     {
         GhostTrajectory,
@@ -108,7 +106,6 @@ public class BaxterController : MonoBehaviour
         robotVisualization = new RobotVisualization(this.urdfRobot);
 
         drawing3 = Drawing3d.Create(10.0f, mat);
-        jointState = new JointState();
     }
 
     private void GetRobotReference()
@@ -358,6 +355,7 @@ public class BaxterController : MonoBehaviour
         var instantiatedGhosts = new List<GameObject>();
         var gripper = leftGripper;
         var finalPose = (int)Poses.Return;
+        var drawPose = (int)Poses.Place;
 
         GameObject ghostPrefab = null;
         if(response.action == "pick_and_place")
@@ -381,12 +379,14 @@ public class BaxterController : MonoBehaviour
         {
             ghostPrefab = ghostPrefabs[3];
             finalPose = (int)Poses.Place;
+            drawPose = (int)Poses.Move;
         }
         
         var doDraw = false;
         var sign = 1;
 
         // For every trajectory plan returned
+        var jointState = new JointState();
         jointState.name = left_joint_names;
         var jointArticulationBodies = leftJointArticulationBodies;
         if (arm == "right")
@@ -405,13 +405,19 @@ public class BaxterController : MonoBehaviour
                 var jointPositions = response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points[jointConfigIndex].positions;
                 double[] result = jointPositions.Select(r => (double)r * Mathf.Rad2Deg).ToArray();
 
-                // If trajectory is short, draw one every 2 poses
+                // If trajectory is short, draw one every 3 poses
                 if (response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length < minN && jointConfigIndex % 3 == 0)
                 {
                     doDraw = true;
                 }
-                // If longer, draw one every 3 poses
-                else if (response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length >= minN && jointConfigIndex % 4 == 0)
+                // If longer, draw one every 5 poses
+                else if (response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length >= minN && jointConfigIndex % 5 == 0)
+                {
+                    doDraw = true;
+                }
+
+                // If place pose, draw last position
+                if (poseIndex == drawPose && jointConfigIndex == response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length - 1)
                 {
                     doDraw = true;
                 }
@@ -469,6 +475,7 @@ public class BaxterController : MonoBehaviour
         var initialJointConfig = InitialJointConfig(arm);
         double[] lastJointState = initialJointConfig.angles;
         var instantiatedGhosts = new List<GameObject>();
+        var sign = 1;
         var gripper = leftGripper;
         var finalPose = (int)Poses.Place;
 
@@ -497,9 +504,8 @@ public class BaxterController : MonoBehaviour
             finalPose = (int)Poses.Move;
         }
 
-        var sign = 1;
-
         // For every trajectory plan returned
+        var jointState = new JointState();
         jointState.name = left_joint_names;
         var jointArticulationBodies = leftJointArticulationBodies;
         if (arm == "right")

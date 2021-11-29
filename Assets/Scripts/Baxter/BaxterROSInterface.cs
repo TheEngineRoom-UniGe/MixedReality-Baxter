@@ -248,7 +248,7 @@ public class BaxterROSInterface : MonoBehaviour
         request = controller.PlanningRequest(arm, op, pickPosition, placePosition, pickOrientation, placeOrientation);
         ros.SendServiceMessage<ActionServiceResponse>(request.arm + "_group/" + plannerServiceName, request, controller.ROSServiceResponse);
 
-        if(renderMode == (int)BaxterController.RenderModes.FinalPose)
+        if(renderMode != (int)BaxterController.RenderModes.AnticipatoryTrajectory)
         {
             yield return new WaitForSeconds(2.0f);
             DeleteHologram(op);
@@ -272,7 +272,7 @@ public class BaxterROSInterface : MonoBehaviour
             ros.Publish(actionDoneTopicName, new Bool());
         }
 
-        if (renderMode != (int)BaxterController.RenderModes.FinalPose)
+        if (renderMode == (int)BaxterController.RenderModes.AnticipatoryTrajectory)
         {
             DeleteHologram(op);
         }
