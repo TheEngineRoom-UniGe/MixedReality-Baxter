@@ -20,14 +20,71 @@ from trajectory_msgs.msg import (
     JointTrajectoryPoint,
 )
 
-from baxter_unity.msg import PlannedTrajectory
+from baxter_unity.msg import PlannedAction
 
 from baxter_interface import CHECK_VERSION
 
-# Global variables
-limb = ""
-wait_time = 0
+# Client class to provides trajectory execution service
+class TrajectoryClient():
 
+    def __init__(self, limb, wait_time):
+        self.limb = limb
+        self.wait_time = wait_time
+
+        rospy.Subscriber(self.limb + "_group/baxter_moveit_trajectory", PlannedAction, self.callback)
+
+    def callback(self, msg):
+            
+        rospy.sleep(self.wait_time)
+
+        action = msg.action
+        trajectory = msg.arm_trajectory.trajectory
+
+        n = len(trajectory)
+
+        close_gripper_idx = 1
+        open_gripper_idx = n - 2
+        wait_before_returning = n - 3
+        wait_before_opening =  1 if action == "pick_and_place" else 2
+
+        for i in range(len(trajectory)):
+
+            traj = Trajectory(self.limb)
+            # Start with open gripper
+            if i == 0:
+                    traj.open_gripper()
+
+            rospy.on_shutdown(traj.stop)
+            # Command Current Joint Positions first
+            limb_interface = baxter_interface.limb.Limb(self.limb)
+
+            t = 0
+            step = 0.1 if i != 1 else 0.2
+            for point in trajectory[i].joint_trajectory.points:
+                t += step
+                traj.add_point(point.positions, point.velocities, point.accelerations, t)
+                
+            traj.start()
+            traj.wait()
+
+            # Close gripper on grasping
+            if i == close_gripper_idx:
+                    rospy.sleep(1)
+                    traj.close_gripper()
+            # Reopen gripper on release
+            elif i == open_gripper_idx:
+                    rospy.sleep(wait_before_opening)
+                    traj.open_gripper()
+                    rospy.sleep(1)
+
+            # If operation is component handover, wait several seconds before returning object
+            if(action == "component_handover" and i == wait_before_returning):
+                    rospy.sleep(15)
+
+        print("Action Complete")
+
+
+# Trajectory class to handle joint trajectory action
 class Trajectory(object):
 
     def __init__(self, limb):
@@ -87,57 +144,7 @@ class Trajectory(object):
     	gripperCommandMsg.goal.command.position = 0.0
     	self.gripper_publisher.publish(gripperCommandMsg)
 
-def trajectory_callback(msg):
-    
-    
-    if(limb == msg.arm):
-        global wait_time
-        rospy.sleep(wait_time)
 
-        arm = msg.arm
-        operation = msg.operation
-
-        n = len(msg.trajectory)
-        close_gripper_idx = 1
-        open_gripper_idx = n - 2
-        wait_before_returning = n - 3
-        wait_before_opening =  1 if operation == "pickandplace" else 2
-
-        for i in range(len(msg.trajectory)):
-
-            traj = Trajectory(arm)
-            # Start with open gripper
-            if i == 0:
-                    traj.open_gripper()
-
-            rospy.on_shutdown(traj.stop)
-            # Command Current Joint Positions first
-            limb_interface = baxter_interface.limb.Limb(arm)
-
-            t = 1
-            step = 0.1 if i != 1 else 0.2
-            for point in msg.trajectory[i].joint_trajectory.points:
-                traj.add_point(point.positions, point.velocities, point.accelerations, t)
-                t += step
-
-            traj.start()
-            traj.wait(t + 1)
-            # Close gripper on grasping
-            if i == close_gripper_idx:
-                    rospy.sleep(1)
-                    traj.close_gripper()
-            # Reopen gripper on release
-            elif i == open_gripper_idx:
-                    rospy.sleep(wait_before_opening)
-                    traj.open_gripper()
-                    rospy.sleep(1)
-
-            # If operation is component handover, wait several seconds before returning object
-            if(operation == "component_handover" and i == wait_before_returning):
-                    rospy.sleep(15)
-
-            print("Joint Trajectory Action Complete")
-    
 def main():
     
     arg_fmt = argparse.RawDescriptionHelpFormatter
@@ -160,10 +167,9 @@ def main():
     )
 
     args = parser.parse_args(rospy.myargv()[1:])
-    global limb
-    global wait_time
-    limb = args.limb
-    wait_time = args.wait_time
+
+    # Instantiate trajectory handler object
+    client = TrajectoryClient(args.limb, args.wait_time)
 
     print("Initializing node... ")
     rospy.init_node("rsdk_joint_trajectory_client_%s" % (limb,))
@@ -171,8 +177,8 @@ def main():
     rs = baxter_interface.RobotEnable(CHECK_VERSION)
     print("Enabling robot... ")
     rs.enable()
-    print("Running. Ctrl-c to quit")
-    rospy.Subscriber(limb + "_group/baxter_moveit_trajectory", PlannedTrajectory, trajectory_callback)
+    print("Running...")
+    
 
     rospy.spin()
 
