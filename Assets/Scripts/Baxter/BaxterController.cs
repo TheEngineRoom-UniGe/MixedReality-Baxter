@@ -488,6 +488,7 @@ public class BaxterController : MonoBehaviour
         else if (response.action == "component_handover")
         {
             ghostPrefab = ghostPrefabs[2];
+            finalPose = (int)Poses.Move;
 
         }
         else if (response.action == "tool_handover")
@@ -526,6 +527,7 @@ public class BaxterController : MonoBehaviour
 
                 yield return new WaitForSeconds(jointAssignmentWait * 5.0f);
 
+                // Render only final pose of the action
                 if (poseIndex == finalPose && jointConfigIndex == response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length - 1)
                 {
                     jointState.position = new double[9];
@@ -573,10 +575,10 @@ public class BaxterController : MonoBehaviour
         yield return new WaitForSeconds(0.1f);
         for (int poseIndex = 0; poseIndex < response.arm_trajectory.trajectory.Length; poseIndex++)
         {
-            // Slow down when returning to home position
+            // Slow down rendering when returning to home position
             if(poseIndex == response.arm_trajectory.trajectory.Length - 1)
             {
-                steps *= 3;
+                steps *= 2;
             }
             // For every robot pose in trajectory plan
             for (int jointConfigIndex = 0; jointConfigIndex < response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length; jointConfigIndex++)
@@ -628,9 +630,8 @@ public class BaxterController : MonoBehaviour
                 {
                     yield return new WaitForSeconds(placeWait);
                 }
-                else if (poseIndex == (int)Poses.Place)
+                else if (poseIndex == (int)Poses.Return)
                 {
-                    yield return new WaitForSeconds(1.0f);
                     EndTrajectoryExecution(arm);
                 }
             }

@@ -62,10 +62,8 @@ public class BaxterROSInterface : MonoBehaviour
     private GameObject[] tools;
     private GameObject[] components;
     private GameObject[] pieces;
-    /*private Vector3[] pickInitialPositions;
-    private Quaternion[] pickInitialRotations;
-    private Vector3[] toolsInitialPositions;
-    private Quaternion[] toolsInitialRotations;*/
+    private Vector3[] componentsInitialPositions;
+    private Quaternion[] componentsInitialRotations;
     private Queue piecesIDQueue;
     private Queue componentsIDQueue;
     private Queue toolsIDQueue;
@@ -99,6 +97,25 @@ public class BaxterROSInterface : MonoBehaviour
         components[0] = screwbox1;
         components[1] = screwbox2;
         components[2] = screwbox3;
+
+        // Store initial values of components positions in order to reset positions
+        int i = 0;
+        componentsInitialPositions = new Vector3[components.Length];
+        componentsInitialRotations = new Quaternion[components.Length];
+        foreach(GameObject component in components)
+        {
+            componentsInitialPositions[i] = new Vector3(
+                component.transform.localPosition.x, 
+                component.transform.localPosition.y, 
+                component.transform.localPosition.z);
+            componentsInitialRotations[i] = new Quaternion(
+                component.transform.localRotation.x,
+                component.transform.localRotation.y,
+                component.transform.localRotation.z,
+                component.transform.localRotation.w
+                );
+            i++;
+        }
 
         pieces = new GameObject[3];
         pieces[0] = piece1;
@@ -185,12 +202,15 @@ public class BaxterROSInterface : MonoBehaviour
         {
             componentsIDQueue.Enqueue(ID);
 
-            /*pickPoses[ID].transform.localPosition = pickInitialPositions[ID];
-            pickPoses[ID].transform.localRotation = pickInitialRotations[ID];*/
-            // Reactivate tool and make it physically interactable again
-            /*pickPoses[ID].GetComponent<Rigidbody>().isKinematic = false;
-            pickPoses[ID].SetActive(true);*/
-
+            if(!components[ID].activeSelf)
+            {
+                components[ID].transform.localPosition = componentsInitialPositions[ID];
+                components[ID].transform.localRotation = componentsInitialRotations[ID];
+                // Reactivate tool and make it physically interactable again
+                components[ID].GetComponent<Rigidbody>().isKinematic = false;
+                components[ID].SetActive(true);
+            }
+            
             // Pick Pose
             pickPosition = components[ID].transform.localPosition + liftOffset;
             pickOrientation = Quaternion.Euler(180, 90, 0);
@@ -213,7 +233,6 @@ public class BaxterROSInterface : MonoBehaviour
             pickOrientation = Quaternion.Euler(-180, 0, 0);
 
             // Place Pose
-            //placePosition = toolsInitialPositions[ID] + liftOffset + toolsGraspOffsets[ID] + dropOffset;
             placePosition = pickPosition;
             placeOrientation = pickOrientation;
         }
