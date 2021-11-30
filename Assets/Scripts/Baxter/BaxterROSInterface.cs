@@ -12,13 +12,12 @@ public class BaxterROSInterface : MonoBehaviour
     // ROS Connector
     private ROSConnection ros;
 
-    // Scene objects
+    // Robot object
     public GameObject robot;
-    public GameObject ground;
     
     // Variables for holo rendering
     public int renderMode;
-    public int steps = 15;
+    public int steps;
 
     // Variables required for ROS communication
     public string plannerServiceName = "baxter_unity_motion_planner";
@@ -27,12 +26,14 @@ public class BaxterROSInterface : MonoBehaviour
     public string actionDoneTopicName = "action_done";
 
     // Tools
+    public GameObject hexkey;
     public GameObject screwdriver;
 
     // Wooden Pieces
-    public GameObject stoolSideLeft;
     public GameObject piece1;
     public GameObject piece2;
+    public GameObject stoolSideLeft;
+    public GameObject stoolSideRight;
 
     // Components
     public GameObject screwbox1;
@@ -90,8 +91,9 @@ public class BaxterROSInterface : MonoBehaviour
         controller.Init(robot, steps, urdfRobot, drawingMat, ghostPrefabs, renderMode);
 
         // Fill arrays with scene objects
-        tools = new GameObject[1];
-        tools[0] = screwdriver;
+        tools = new GameObject[2];
+        tools[0] = hexkey;
+        tools[1] = screwdriver;
 
         components = new GameObject[3];
         components[0] = screwbox1;
@@ -117,10 +119,11 @@ public class BaxterROSInterface : MonoBehaviour
             i++;
         }
 
-        pieces = new GameObject[3];
+        pieces = new GameObject[4];
         pieces[0] = piece1;
         pieces[1] = piece2;
         pieces[2] = stoolSideLeft;
+        pieces[3] = stoolSideLeft;
 
         // Request initial joint position from real robot controller
         var request = new JointStateServiceRequest();
@@ -157,125 +160,160 @@ public class BaxterROSInterface : MonoBehaviour
 
     private IEnumerator PlanActionRoutine(NextActionMsg msg)
     {
-        // Extract planning parameters from message
-        int ID = msg.id;
-        string op = msg.op;
-
         Vector3 pickPosition;
         Vector3 placePosition;
         Quaternion pickOrientation;
         Quaternion placeOrientation;
+        string arm = "";
 
-        string arm = "left";
-
-        if (op == "pick_and_place")
+        var planForBoth = msg.op.Length == 2;
+        // Plan for single or both arms depending on msg content
+        for(int i=0; i<msg.op.Length; i++)
         {
-            piecesIDQueue.Enqueue(ID);
+            int ID = msg.id[i];
+            string action = msg.op[i];
+            arm = "left";
 
-            // Pick Pose
-            pickPosition = pieces[ID].transform.localPosition + liftOffset;
-            pickOrientation = Quaternion.Euler(180, 0, 0);
+            if (action == "pick_and_place")
+            {
+                piecesIDQueue.Enqueue(ID);
 
-            // Place Pose
-            placePosition = placePositionMiddle.transform.localPosition + liftOffset;
-            placeOrientation = pickOrientation;
-        }
-        else if (op == "tool_handover")
-        {
-            toolsIDQueue.Enqueue(ID);
+                // Pick Pose
+                pickPosition = pieces[ID].transform.localPosition + liftOffset;
+                pickOrientation = Quaternion.Euler(180, 0, 0);
 
-            // Pick Pose
-            pickPosition = tools[ID].transform.localPosition + liftOffset;
-            pickOrientation = Quaternion.Euler(-180.0f, 0.0f, 0.0f);
+                // Place Pose
+                placePosition = placePositionMiddle.transform.localPosition + liftOffset;
+                placeOrientation = pickOrientation;
+            }
+            else if (action == "tool_handover")
+            {
+                toolsIDQueue.Enqueue(ID);
 
-            var handoverPosition = handoverPositionLeft;
+                // Pick Pose
+                pickPosition = tools[ID].transform.localPosition + liftOffset;
+                pickOrientation = Quaternion.Euler(-180.0f, 0.0f, 0.0f);
+
+                var handoverPosition = handoverPositionLeft;
+                if (pickPosition.x > 0)
+                {
+                    handoverPosition = handoverPositionRight;
+                }
+
+                // Handover Pose
+                placePosition = handoverPosition.transform.localPosition;
+                placeOrientation = Quaternion.Euler(-90.0f, 90.0f, 90.0f);
+            }
+            else if (action == "component_handover")
+            {
+                componentsIDQueue.Enqueue(ID);
+
+                if (!components[ID].activeSelf)
+                {
+                    components[ID].transform.localPosition = componentsInitialPositions[ID];
+                    components[ID].transform.localRotation = componentsInitialRotations[ID];
+                    // Reactivate tool and make it physically interactable again
+                    components[ID].GetComponent<Rigidbody>().isKinematic = false;
+                    components[ID].SetActive(true);
+                }
+
+                // Pick Pose
+                pickPosition = components[ID].transform.localPosition + liftOffset;
+                pickOrientation = Quaternion.Euler(180, 90, 0);
+
+                var handoverPosition = handoverPositionLeft;
+                if (pickPosition.x > 0)
+                {
+                    handoverPosition = handoverPositionRight;
+                }
+
+                // Handover Pose
+                placePosition = handoverPosition.transform.localPosition;
+                placeOrientation = Quaternion.Euler(180, 90, 0);
+
+            }
+            else // Default case
+            {
+                // Pick Pose
+                pickPosition = placePositionMiddle.transform.localPosition + liftOffset;
+                pickOrientation = Quaternion.Euler(-180, 0, 0);
+
+                // Place Pose
+                placePosition = pickPosition;
+                placeOrientation = pickOrientation;
+            }
+
+            // Choose for which arm to plan based on position of object to pick
             if (pickPosition.x > 0)
             {
-                handoverPosition = handoverPositionRight;
+                arm = "right";
+                controller.rightCoroutineQueue.Enqueue(ID);
             }
-
-            // Handover Pose
-            placePosition = handoverPosition.transform.localPosition;
-            placeOrientation = Quaternion.Euler(-90.0f, 90.0f, 90.0f);
-        }
-        else if (op == "component_handover")
-        {
-            componentsIDQueue.Enqueue(ID);
-
-            if(!components[ID].activeSelf)
+            else
             {
-                components[ID].transform.localPosition = componentsInitialPositions[ID];
-                components[ID].transform.localRotation = componentsInitialRotations[ID];
-                // Reactivate tool and make it physically interactable again
-                components[ID].GetComponent<Rigidbody>().isKinematic = false;
-                components[ID].SetActive(true);
+                controller.leftCoroutineQueue.Enqueue(ID);
             }
-            
-            // Pick Pose
-            pickPosition = components[ID].transform.localPosition + liftOffset;
-            pickOrientation = Quaternion.Euler(180, 90, 0);
 
-            var handoverPosition = handoverPositionLeft;
-            if (pickPosition.x > 0)
+            // Send motion planning request to ROS
+            ActionServiceRequest request = null;
+            request = controller.PlanningRequest(arm, action, pickPosition, placePosition, pickOrientation, placeOrientation);
+            ros.SendServiceMessage<ActionServiceResponse>(request.arm + "_group/" + plannerServiceName, request, controller.ROSServiceResponse);
+
+        }
+
+        // If planning for single arm, wait for completion of trajectory execution, depending on arm
+        if(!planForBoth)
+        {
+            if (renderMode != (int)BaxterController.RenderModes.AnticipatoryTrajectory)
             {
-                handoverPosition = handoverPositionRight;
+                yield return new WaitForSeconds(2.0f);
+                DeleteHologram(msg.op[0]);
             }
 
-            // Handover Pose
-            placePosition = handoverPosition.transform.localPosition;
-            placeOrientation = Quaternion.Euler(180, 90, 0);
-            
-        }
-        else // Default case
-        {
-            // Pick Pose
-            pickPosition = placePositionMiddle.transform.localPosition + liftOffset;
-            pickOrientation = Quaternion.Euler(-180, 0, 0);
-
-            // Place Pose
-            placePosition = pickPosition;
-            placeOrientation = pickOrientation;
-        }
-
-        // Choose for which arm to plan based on position of object to pick
-        if (pickPosition.x > 0)
-        {
-            arm = "right";
-        }
-
-        // Send motion planning request to ROS
-        ActionServiceRequest request = null;
-        request = controller.PlanningRequest(arm, op, pickPosition, placePosition, pickOrientation, placeOrientation);
-        ros.SendServiceMessage<ActionServiceResponse>(request.arm + "_group/" + plannerServiceName, request, controller.ROSServiceResponse);
-
-        if(renderMode != (int)BaxterController.RenderModes.AnticipatoryTrajectory)
-        {
-            yield return new WaitForSeconds(2.0f);
-            DeleteHologram(op);
-        }
-
-        // Wait for completion of trajectory execution
-        if(arm == "left")
-        {
-            while (controller.leftCoroutineRunning)
+            if (arm == "left")
             {
-                yield return new WaitForSeconds(0.1f);
+                while (controller.leftCoroutineQueue.Count == 1)
+                {
+                    yield return new WaitForSeconds(0.05f);
+                }
             }
-            ros.Publish(actionDoneTopicName, new Bool());
+            else
+            {
+                while (controller.rightCoroutineQueue.Count == 1)
+                {
+                    yield return new WaitForSeconds(0.05f);
+                }
+            }
+
+            if (renderMode == (int)BaxterController.RenderModes.AnticipatoryTrajectory)
+            {
+                DeleteHologram(msg.op[0]);
+            }
         }
+
+        // Else, if planning for both arms, wait for completion of both trajectories before next action
         else
         {
-            while (controller.rightCoroutineRunning)
+            if (renderMode != (int)BaxterController.RenderModes.AnticipatoryTrajectory)
             {
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(2.0f);
+                DeleteHologram(msg.op[0]);
+                DeleteHologram(msg.op[1]);
             }
-            ros.Publish(actionDoneTopicName, new Bool());
+
+            while (controller.rightCoroutineQueue.Count == 1 || controller.leftCoroutineQueue.Count == 1)
+            {
+                yield return new WaitForSeconds(0.05f);
+            }
+
+            if (renderMode == (int)BaxterController.RenderModes.AnticipatoryTrajectory)
+            {
+                DeleteHologram(msg.op[0]);
+                DeleteHologram(msg.op[1]);
+            }
         }
 
-        if (renderMode == (int)BaxterController.RenderModes.AnticipatoryTrajectory)
-        {
-            DeleteHologram(op);
-        }
+        ros.Publish(actionDoneTopicName, new Bool());
     }
 
     private void DeleteHologram(string op)
@@ -293,7 +331,7 @@ public class BaxterROSInterface : MonoBehaviour
             components[currentComponentID].GetComponent<Rigidbody>().isKinematic = true;
             components[currentComponentID].SetActive(false);
         }
-        else
+        else if(op == "tool_handover")
         {
             var currentToolID = (int)toolsIDQueue.Dequeue();
             tools[currentToolID].GetComponent<Rigidbody>().isKinematic = true;

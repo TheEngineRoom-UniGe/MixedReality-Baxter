@@ -13,16 +13,16 @@ namespace RosMessageTypes.BaxterUnity
         public const string k_RosMessageName = "baxter_unity/NextAction";
         public override string RosMessageName => k_RosMessageName;
 
-        public string op;
-        public int id;
+        public string[] op;
+        public int[] id;
 
         public NextActionMsg()
         {
-            this.op = "";
-            this.id = 0;
+            this.op = new string[0];
+            this.id = new int[0];
         }
 
-        public NextActionMsg(string op, int id)
+        public NextActionMsg(string[] op, int[] id)
         {
             this.op = op;
             this.id = id;
@@ -32,21 +32,23 @@ namespace RosMessageTypes.BaxterUnity
 
         private NextActionMsg(MessageDeserializer deserializer)
         {
-            deserializer.Read(out this.op);
-            deserializer.Read(out this.id);
+            deserializer.Read(out this.op, deserializer.ReadLength());
+            deserializer.Read(out this.id, sizeof(int), deserializer.ReadLength());
         }
 
         public override void SerializeTo(MessageSerializer serializer)
         {
+            serializer.WriteLength(this.op);
             serializer.Write(this.op);
+            serializer.WriteLength(this.id);
             serializer.Write(this.id);
         }
 
         public override string ToString()
         {
             return "NextActionMsg: " +
-            "\nop: " + op.ToString() +
-            "\nid: " + id.ToString();
+            "\nop: " + System.String.Join(", ", op.ToList()) +
+            "\nid: " + System.String.Join(", ", id.ToList());
         }
 
 #if UNITY_EDITOR

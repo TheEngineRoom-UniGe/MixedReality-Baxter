@@ -1,2 +1,2 @@
-string op
-int32 id
+string[] op
+int32[] id
