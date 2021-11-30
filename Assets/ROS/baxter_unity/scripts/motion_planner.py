@@ -24,7 +24,8 @@ class MotionPlanner:
     def __init__(self, limb, offset):
         self.limb = limb
         self.height_offset = offset
-        self.seq = 0
+        self.pick_seq = 0
+        self.tool_seq = 0
 
         group_name = self.limb + "_arm"
         self.move_group = moveit_commander.MoveGroupCommander(group_name)
@@ -118,8 +119,8 @@ class MotionPlanner:
         response = ActionServiceResponse()
         response.action = op
         response.arm_trajectory.arm = self.limb
-        response.seq = self.seq
-        self.seq += 1
+        response.pick_seq = self.pick_seq
+        self.pick_seq += 1
 
         # Initial joint configuration
         current_robot_joint_configuration = [math.radians(req.joints.angles[i]) for i in range(7)]
@@ -180,6 +181,8 @@ class MotionPlanner:
         response = ActionServiceResponse()
         response.action = op
         response.arm_trajectory.arm = self.limb
+        response.tool_seq = self.tool_seq
+        self.tool_seq += 1
 
         # Initial joint configuration
         current_robot_joint_configuration = [math.radians(req.joints.angles[i]) for i in range(7)]

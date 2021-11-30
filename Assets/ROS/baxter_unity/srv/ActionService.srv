@@ -4,6 +4,7 @@ ArmJoints joints
 geometry_msgs/Pose pick_pose
 geometry_msgs/Pose place_pose
 ---
-int32 seq
+int32 pick_seq
+int32 tool_seq
 string action
 PlannedTrajectory arm_trajectory
