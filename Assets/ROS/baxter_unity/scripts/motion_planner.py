@@ -15,7 +15,7 @@ from moveit_msgs.msg import RobotState
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Quaternion, Pose, PoseStamped
 
-from baxter_unity.msg import PlannedTrajectory
+from baxter_unity.msg import PlannedAction
 from baxter_unity.srv import ActionService, ActionServiceRequest, ActionServiceResponse
 
 
@@ -24,12 +24,13 @@ class MotionPlanner:
     def __init__(self, limb, offset):
         self.limb = limb
         self.height_offset = offset
-        self.seq = 0
+        self.pick_seq = 0
+        self.tool_seq = 0
 
         group_name = self.limb + "_arm"
         self.move_group = moveit_commander.MoveGroupCommander(group_name)
 
-        self.publisher = rospy.Publisher('baxter_moveit_trajectory', PlannedTrajectory, queue_size=10)
+        self.publisher = rospy.Publisher('baxter_moveit_trajectory', PlannedAction, queue_size=10)
         
     # Plan straight line trajectory
     def plan_cartesian_trajectory(self, destination_pose, start_joint_angles):
@@ -118,8 +119,8 @@ class MotionPlanner:
         response = ActionServiceResponse()
         response.action = op
         response.arm_trajectory.arm = self.limb
-        response.seq = self.seq
-        self.seq += 1
+        response.pick_seq = self.pick_seq
+        self.pick_seq += 1
 
         # Initial joint configuration
         current_robot_joint_configuration = [math.radians(req.joints.angles[i]) for i in range(7)]
@@ -165,10 +166,11 @@ class MotionPlanner:
 
         self.move_group.clear_pose_targets()
 
-        jointsMsg = PlannedTrajectory()
-        jointsMsg.arm = self.limb
-        jointsMsg.trajectory = response.arm_trajectory.trajectory
-        self.publisher.publish(jointsMsg)
+        action_msg = PlannedAction()
+        action_msg.action = op
+        action_msg.arm_trajectory.arm = self.limb
+        action_msg.arm_trajectory.trajectory = response.arm_trajectory.trajectory
+        self.publisher.publish(action_msg)
         
         return response
   
@@ -179,6 +181,8 @@ class MotionPlanner:
         response = ActionServiceResponse()
         response.action = op
         response.arm_trajectory.arm = self.limb
+        response.tool_seq = self.tool_seq
+        self.tool_seq += 1
 
         # Initial joint configuration
         current_robot_joint_configuration = [math.radians(req.joints.angles[i]) for i in range(7)]
@@ -218,11 +222,11 @@ class MotionPlanner:
 
         self.move_group.clear_pose_targets()
         
-        jointsMsg = PlannedTrajectory()
-        #jointsMsg.action = op
-        jointsMsg.arm = self.limb
-        jointsMsg.trajectory = response.arm_trajectory.trajectory
-        self.publisher.publish(jointsMsg)
+        action_msg = PlannedAction()
+        action_msg.action = op
+        action_msg.arm_trajectory.arm = self.limb
+        action_msg.arm_trajectory.trajectory = response.arm_trajectory.trajectory
+        self.publisher.publish(action_msg)
 
         return response
 
@@ -279,11 +283,11 @@ class MotionPlanner:
 
         self.move_group.clear_pose_targets()
 
-        jointsMsg = PlannedTrajectory()
-        #jointsMsg.action = op
-        jointsMsg.arm = self.limb
-        jointsMsg.trajectory = response.arm_trajectory.trajectory
-        self.publisher.publish(jointsMsg)
+        action_msg = PlannedAction()
+        action_msg.action = op
+        action_msg.arm_trajectory.arm = self.limb
+        action_msg.arm_trajectory.trajectory = response.arm_trajectory.trajectory
+        self.publisher.publish(action_msg)
 
         return response
 
@@ -360,6 +364,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-
-    

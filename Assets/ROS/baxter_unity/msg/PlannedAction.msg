@@ -1,0 +1,2 @@
+string action
+PlannedTrajectory arm_trajectory

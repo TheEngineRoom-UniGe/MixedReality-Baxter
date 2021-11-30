@@ -143,28 +143,18 @@ class PlanManager():
 
             instruction = self.plan_steps[self.action_idx].split()
 
-            operation = instruction[0]
-            id = int(instruction[1])
-
             next_action_msg = NextAction()
-            next_action_msg.op = operation
-            next_action_msg.id = id
-
-            self.next_action_pub.publish(next_action_msg)
-
             # If row contains two instructions, plan for both arms
             if(len(instruction) > 2):
+                next_action_msg.op = [instruction[0], instruction[2]]
+                next_action_msg.id = [int(instruction[1]), int(instruction[3])]
+            # Else, plan for single arm
+            else:
+                next_action_msg.op = [instruction[0]]
+                next_action_msg.id = [int(instruction[1])]
 
-                rospy.sleep(0.1)
-
-                operation2 = instruction[2]
-                id2 = int(instruction[3])
-
-                next_action_msg.op = operation2
-                next_action_msg.id = id2
-
-                self.next_action_pub.publish(next_action_msg)
-                
+            self.next_action_pub.publish(next_action_msg)
+ 
             self.action_idx += 1
 
         elif self.action_idx == self.plan_length:
