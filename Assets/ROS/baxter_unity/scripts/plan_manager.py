@@ -2,20 +2,15 @@
 from __future__ import print_function
 
 import rospy
-import sys
-import copy
-import math
 import rospkg
-import logging
 import cv2
 import serial
 import threading
 import time
 import argparse
 
-from std_msgs.msg import String, Bool
-from sensor_msgs.msg import JointState, Image
-from geometry_msgs.msg import Quaternion, Pose, PoseStamped
+from std_msgs.msg import Bool
+from sensor_msgs.msg import Image
 
 from baxter_unity.msg import PlannedTrajectory, NextAction
 
@@ -48,7 +43,7 @@ class SerialReaderTask:
             self.t_received_command = time.time()
             print("Next action is paused:", self.is_paused)
 
-    def terminate(self):
+    def stop(self):
         self.running = False
 
     def run(self, ser):
@@ -60,11 +55,10 @@ class SerialReaderTask:
 # Plan manager class to read and publish robot's actions
 class PlanManager():
 
-    def __init__(self, plan_file_name, log_file_name):
+    def __init__(self, pkg_path_name, log_file_name):
         rospy.Subscriber("/action_done", Bool, self.next_action_handler)
         self.next_action_pub = rospy.Publisher('/next_action', NextAction, queue_size=10)
-
-        rospy.sleep(2.0)
+        self.image_pub = rospy.Publisher('/robot/xdisplay', Image, queue_size=10)
 
         # Start internal task to monitor serial input
         self.serial_port = serial.Serial('/dev/ttyACM0')
@@ -73,57 +67,30 @@ class PlanManager():
         self.thread.start()
 
         # Internal logger
-        self.logger = Logger(log_file_name)
+        self.logger = Logger(pkg_path_name + "/logs/" + log_file_name + ".txt")
         self.logger.log("------------------------")
 
         # Variables to keep track of time for each action and robot idle time
-        self.action_time = 0.0
+        self.task_time = 0.0
         self.pause_time = 0.0
 
         # Read plan steps from file
-        with open(plan_file_name) as f:
+        with open(pkg_path_name + "/data/plan.txt") as f:
             self.plan_steps = f.readlines()
             
         self.plan_length = len(self.plan_steps)
         self.action_idx = 0
 
+        rospy.sleep(2.0)
         print("Ready to accept user inputs ...")
 
-        '''
         # Publish start screen image on robot's display
-        img = cv2.imread(pkg_path + "/images/start.png")
+        self.images_path = pkg_path_name + "/images/"
+        img = cv2.imread(self.images_path + "start.png")
         img_msg = CvBridge().cv2_to_imgmsg(img)
-        rospy.sleep(0.25)
-        image_pub.publish(img_msg)
+        rospy.sleep(0.5)
+        self.image_pub.publish(img_msg)
         
-        # Prepare dictionary of images file names and step indices
-        images_dict = {
-            0: "step1",
-            1: "step2",
-            2: "step3",
-            3: "step4",
-            4: "step5",
-            5: "step6",
-            6: "step7",
-            8: "step8",
-            9: "step9",
-            10: "step10",
-        }   
-
-        # If certain step of plan is reached, publish new image with instructions
-        if(i in images_dict):
-            img = cv2.imread(pkg_path + "/images/" + images_dict[i] + ".png")
-            img_resized = cv2.resize(img, (1000, 600), interpolation = cv2.INTER_AREA)
-            img_msg = CvBridge().cv2_to_imgmsg(img_resized)
-            image_pub.publish(img_msg)
-
-
-        # Publish end screen image to display at the end of planning steps
-        img = cv2.imread(pkg_path + "/images/end.png")
-        img_msg = CvBridge().cv2_to_imgmsg(img)
-        image_pub.publish(img_msg)
-        '''
-
     # Handles next action based on paused status
     def next_action_handler(self, msg):
         if(not self.reader_task.is_paused):
@@ -137,12 +104,11 @@ class PlanManager():
         # Publish next action(s)
         if self.action_idx < self.plan_length:
 
-            # Keep track of time elapsed from previous action
+            # Store initial time
             if(self.action_idx == 0):
-                self.action_time = time.time()
+                self.task_time = time.time()
 
             instruction = self.plan_steps[self.action_idx].split()
-
             next_action_msg = NextAction()
             # If row contains two instructions, plan for both arms
             if(len(instruction) > 2):
@@ -154,14 +120,27 @@ class PlanManager():
                 next_action_msg.id = [int(instruction[1])]
 
             self.next_action_pub.publish(next_action_msg)
- 
+
+            # If certain step of plan is reached, publish new image with instructions
+            img = cv2.imread(self.images_path + "step" + str(self.action_idx) + ".png")
+            #img_resized = cv2.resize(img, (1000, 600), interpolation = cv2.INTER_AREA)
+            img_msg = CvBridge().cv2_to_imgmsg(img)
+            self.image_pub.publish(img_msg)
+
             self.action_idx += 1
 
+        # If last "action_done" message, save total task time and exit
         elif self.action_idx == self.plan_length:
-            elapsed_action_time = time.time() - self.action_time
-            self.logger.log("Total Task Time: {0} seconds".format(elapsed_action_time))
+            elapsed_task_time = time.time() - self.task_time
+            self.logger.log("Total Task Time: {0} seconds".format(elapsed_task_time))
 
-            self.reader_task.terminate()
+            # Publish end screen image to display at the end of planning steps
+            img = cv2.imread(self.images_path + "end.png")
+            img_msg = CvBridge().cv2_to_imgmsg(img)
+            self.image_pub.publish(img_msg)
+
+            # Stop thread process, close log file and exit
+            self.reader_task.stop()
             self.thread.join()
             self.logger.close()
             rospy.sleep(0.5)
@@ -174,10 +153,11 @@ class PlanManager():
             try:
                 rospy.sleep(0.2)
             except KeyboardInterrupt:
-                reader_task.terminate()
-                thread.join()
+                self.reader_task.stop()
+                self.thread.join()
                 self.logger.close()
-                sys.exit(1)
+                rospy.sleep(0.5)
+                rospy.signal_shutdown("Process shutdown")
 
         # If not first action, keep track of robot idle time during the pause
         if(self.action_idx != 0):
@@ -207,9 +187,7 @@ def main():
     log_file = args.file_name
 
     # Instantiate plan manager object
-    plan_file_name = pkg_path + "/data/plan.txt"
-    log_file_name = pkg_path + "/logs/" + log_file + ".txt"
-    manager = PlanManager(plan_file_name, log_file_name)
+    manager = PlanManager(pkg_path, log_file)
 
     rospy.spin()
    
