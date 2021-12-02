@@ -84,7 +84,7 @@ public class BaxterROSInterface : MonoBehaviour
 
         // Register to topics related to plan management
         ros.Subscribe<NextActionMsg>(nextActionTopicName, PlanNextAction);
-        ros.RegisterPublisher<Bool>(actionDoneTopicName);
+        //ros.RegisterPublisher<Bool>(actionDoneTopicName);
 
         // Instantiate Baxter Controller
         controller = gameObject.AddComponent<BaxterController>();
@@ -123,7 +123,7 @@ public class BaxterROSInterface : MonoBehaviour
         pieces[0] = piece1;
         pieces[1] = piece2;
         pieces[2] = stoolSideLeft;
-        pieces[3] = stoolSideLeft;
+        pieces[3] = stoolSideRight;
 
         // Request initial joint position from real robot controller
         var request = new JointStateServiceRequest();
@@ -150,7 +150,7 @@ public class BaxterROSInterface : MonoBehaviour
         controller.SpawnRobotAndInterface(spawnPosition);
 
         // Signal initialization complete
-        ros.Publish(actionDoneTopicName, new Bool());
+        //ros.Publish(actionDoneTopicName, new Bool());
     }
 
     public void PlanNextAction(NextActionMsg msg)
@@ -313,7 +313,7 @@ public class BaxterROSInterface : MonoBehaviour
             }
         }
 
-        ros.Publish(actionDoneTopicName, new Bool());
+        //ros.Publish(actionDoneTopicName, new Bool());
     }
 
     private void DeleteHologram(string op)
@@ -322,7 +322,8 @@ public class BaxterROSInterface : MonoBehaviour
         if (op == "pick_and_place")
         {
             var currentPickID = (int)piecesIDQueue.Dequeue();
-            pieces[currentPickID].GetComponent<Rigidbody>().isKinematic = true;
+            //pieces[currentPickID].GetComponent<Rigidbody>().useGravity = false;
+            //pieces[currentPickID].GetComponent<Rigidbody>().isKinematic = true;
             pieces[currentPickID].SetActive(false);
         }
         else if (op == "component_handover")

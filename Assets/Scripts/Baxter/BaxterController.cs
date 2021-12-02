@@ -18,7 +18,9 @@ public class BaxterController : MonoBehaviour
 {
     // Timing variables for rendering trajectories
     private float jointAssignmentWait = 0.005f;
-    private float placeWait = 12.0f;
+    private float componentHandoverWait = 15.0f;
+    private float pickPlaceWait = 9.0f;
+    private float handoverWait = 9.0f;
     private float drawTime = 12.0f;
 
     // Robot
@@ -274,7 +276,7 @@ public class BaxterController : MonoBehaviour
             target[i] = Mathf.Rad2Deg * (float)restPosition[indices[i]];
         }
         float[] lastJointState = {0,0,0,0,0,0,0}; 
-        var steps = 100;
+        var steps = 200;
         var jointArticulationBodies = leftJointArticulationBodies;
         if(arm == "right")
         {
@@ -632,28 +634,29 @@ public class BaxterController : MonoBehaviour
             // Handle different cases based on the executed action
             if (response.action == "pick_and_place" && poseIndex == (int)Poses.Place)
             {
-                yield return new WaitForSeconds(placeWait);
+                yield return new WaitForSeconds(pickPlaceWait);
                 EndTrajectoryExecution(arm);
             }
             else if (response.action == "tool_handover" && poseIndex == (int)Poses.Move)
             {
-                yield return new WaitForSeconds(placeWait);
+                yield return new WaitForSeconds(handoverWait);
                 EndTrajectoryExecution(arm);
             }
             else if (response.action == "component_handover")
             {
                 if (poseIndex == (int)Poses.Move)
                 {
-                    yield return new WaitForSeconds(placeWait);
+                    yield return new WaitForSeconds(componentHandoverWait);
                 }
-                else if (poseIndex == (int)Poses.Return)
+                else if (poseIndex == (int)Poses.Place)
                 {
+                    yield return new WaitForSeconds(0.5f);
                     EndTrajectoryExecution(arm);
                 }
             }
             else if (response.action == "put_back" && poseIndex == (int)Poses.Place)
             {
-                yield return new WaitForSeconds(placeWait);
+                yield return new WaitForSeconds(pickPlaceWait);
                 EndTrajectoryExecution(arm);
             }
         }
