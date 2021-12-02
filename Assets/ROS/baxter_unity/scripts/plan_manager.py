@@ -97,6 +97,11 @@ class PlanManager():
             self.publish_next(msg)
         # If paused, wait until unpausing before publishing
         else:
+            # Publish paused image
+            if(self.action_idx != 0):
+                img = cv2.imread(self.images_path + "step" + str(self.action_idx - 1) + "_paused.png")
+                img_msg = CvBridge().cv2_to_imgmsg(img)
+                self.image_pub.publish(img_msg)
             self.publish_next_later(msg)
 
     # Immediately publish next action(s)
