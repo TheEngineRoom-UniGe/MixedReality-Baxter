@@ -9,12 +9,12 @@
     <node name="joint_states_service" pkg="baxter_unity" type="joint_states_service.py" output="screen" />
     
     <group ns="left_group">
-	  <node name="motion_planner_left" pkg="baxter_unity" type="motion_planner.py" args="--limb left --offset 0.1525 --obstacle 0.625" output="screen"  />
+	  <node name="motion_planner_left" pkg="baxter_unity" type="motion_planner.py" args="--limb left --offset 0.165 --obstacle 0.625" output="screen"  />
 	  <include file="$(find baxter_unity)/launch/demo.launch" />
     </group>
     
     <group ns="right_group">
-	  <node name="motion_planner_right" pkg="baxter_unity" type="motion_planner.py" args="--limb right --offset 0.15 --obstacle 0.65" output="screen"  />
+	  <node name="motion_planner_right" pkg="baxter_unity" type="motion_planner.py" args="--limb right --offset 0.165 --obstacle 0.65" output="screen"  />
 	  <include file="$(find baxter_unity)/launch/demo.launch" />
     </group>
     

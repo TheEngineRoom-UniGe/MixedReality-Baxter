@@ -8,14 +8,13 @@ from copy import copy
 import rospy
 import actionlib
 import baxter_interface
-import baxter_tools
 
 from control_msgs.msg import (
     FollowJointTrajectoryAction,
     FollowJointTrajectoryGoal,
     GripperCommandActionGoal
 )
-from std_msgs.msg import String
+from std_msgs.msg import Bool
 from trajectory_msgs.msg import (
     JointTrajectoryPoint,
 )
@@ -31,6 +30,7 @@ class TrajectoryClient():
         self.limb = limb
         self.wait_time = wait_time
 
+        self.action_done_pub = rospy.Publisher('/action_done', Bool, queue_size=10)
         rospy.Subscriber(self.limb + "_group/baxter_moveit_trajectory", PlannedAction, self.callback)
 
     def callback(self, msg):
@@ -45,7 +45,7 @@ class TrajectoryClient():
         close_gripper_idx = 1
         open_gripper_idx = n - 2
         wait_before_returning = n - 3
-        wait_before_opening =  1 if action == "pick_and_place" else 2
+        wait_before_opening =  2
 
         for i in range(len(trajectory)):
 
@@ -59,7 +59,7 @@ class TrajectoryClient():
             limb_interface = baxter_interface.limb.Limb(self.limb)
 
             t = 0
-            step = 0.1 if i != 1 else 0.2
+            step = 0.15 if i != 1 else 0.2
             for point in trajectory[i].joint_trajectory.points:
                 t += step
                 traj.add_point(point.positions, point.velocities, point.accelerations, t)
@@ -79,8 +79,10 @@ class TrajectoryClient():
 
             # If operation is component handover, wait several seconds before returning object
             if(action == "component_handover" and i == wait_before_returning):
-                    rospy.sleep(15)
+                    rospy.sleep(12)
+            rospy.sleep(0.25)
 
+        self.action_done_pub.publish(Bool())
         print("Action Complete")
 
 
@@ -172,7 +174,7 @@ def main():
     client = TrajectoryClient(args.limb, args.wait_time)
 
     print("Initializing node... ")
-    rospy.init_node("rsdk_joint_trajectory_client_%s" % (limb,))
+    rospy.init_node("rsdk_joint_trajectory_client_%s" % (args.limb,))
     print("Getting robot state... ")
     rs = baxter_interface.RobotEnable(CHECK_VERSION)
     print("Enabling robot... ")
