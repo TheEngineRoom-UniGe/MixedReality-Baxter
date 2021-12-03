@@ -1,3 +1,8 @@
 component_handover 0 pick_and_place 0
-pick_and_place 1
+component_handover 0 pick_and_place 1
 pick_and_place 2
+pick_and_place 3
+component_handover 1
+tool_handover 0
+component_handover 2
+tool_handover 1

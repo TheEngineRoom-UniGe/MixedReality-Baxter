@@ -124,7 +124,7 @@ class PlanManager():
             # Publish paused image
             if(self.action_idx != 0):
                 img = cv2.imread(self.images_path + "step" + str(self.action_idx - 1) + "_paused.png")
-                img_resized = cv2.resize(img, (1000, 600), interpolation = cv2.INTER_AREA)
+                img_resized = cv2.resize(img, (1020, 600), interpolation = cv2.INTER_AREA)
                 img_msg = CvBridge().cv2_to_imgmsg(img_resized)
                 self.image_pub.publish(img_msg)
             self.publish_next_later()
@@ -155,7 +155,7 @@ class PlanManager():
 
             # If certain step of plan is reached, publish new image with instructions
             img = cv2.imread(self.images_path + "step" + str(self.action_idx) + ".png")
-            img_resized = cv2.resize(img, (1000, 600), interpolation = cv2.INTER_AREA)
+            img_resized = cv2.resize(img, (1020, 600), interpolation = cv2.INTER_AREA)
             img_msg = CvBridge().cv2_to_imgmsg(img_resized)
             self.image_pub.publish(img_msg)
 
