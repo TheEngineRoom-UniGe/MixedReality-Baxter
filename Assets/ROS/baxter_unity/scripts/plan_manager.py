@@ -163,7 +163,24 @@ class PlanManager():
 
         # If last "action_done" message, save total task time and exit
         elif self.action_idx == self.plan_length:
-            elapsed_task_time = time.time() - self.task_time
+            self.pause_time = time.time()
+            current_task_reader_val = self.reader_task.is_paused
+            # Loop until user signals end of collaboration
+            while current_task_reader_val == self.reader_task.is_paused:
+                try:
+                    rospy.sleep(0.2)
+                except KeyboardInterrupt:
+                    self.reader_task.stop()
+                    self.thread.join()
+                    self.logger.close()
+                    rospy.sleep(0.5)
+                    rospy.signal_shutdown("Process shutdown")
+
+            now = time.time()
+            elapsed_pause_time = now - self.pause_time
+            self.logger.log("Action {0} - Robot Idle Time: {1} seconds".format(self.action_idx, elapsed_pause_time))
+
+            elapsed_task_time = now - self.task_time
             self.logger.log("Total Task Time: {0} seconds".format(elapsed_task_time))
 
             # Publish end screen image to display at the end of planning steps
