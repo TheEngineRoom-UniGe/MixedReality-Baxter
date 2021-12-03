@@ -75,6 +75,7 @@ public class BaxterROSInterface : MonoBehaviour
     {
         // Get ROS connection static instance
         ros = ROSConnection.GetOrCreateInstance();
+        ros.listenForTFMessages = false;
         
         ros.RegisterRosService<JointStateServiceRequest, JointStateServiceResponse>(jointStateServiceName);
 
@@ -84,7 +85,7 @@ public class BaxterROSInterface : MonoBehaviour
 
         // Register to topics related to plan management
         ros.Subscribe<NextActionMsg>(nextActionTopicName, PlanNextAction);
-        //ros.RegisterPublisher<Bool>(actionDoneTopicName);
+        ros.RegisterPublisher<Bool>(actionDoneTopicName);
 
         // Instantiate Baxter Controller
         controller = gameObject.AddComponent<BaxterController>();
@@ -289,6 +290,8 @@ public class BaxterROSInterface : MonoBehaviour
             {
                 DeleteHologram(msg.op[0]);
             }
+            yield return new WaitForSeconds(0.5f);
+            ros.Publish(actionDoneTopicName, new Bool());
         }
 
         // Else, if planning for both arms, wait for completion of both trajectories before next action
@@ -311,6 +314,9 @@ public class BaxterROSInterface : MonoBehaviour
                 DeleteHologram(msg.op[0]);
                 DeleteHologram(msg.op[1]);
             }
+            ros.Publish(actionDoneTopicName, new Bool());
+            yield return new WaitForSeconds(0.5f);
+            ros.Publish(actionDoneTopicName, new Bool());
         }
 
         //ros.Publish(actionDoneTopicName, new Bool());
