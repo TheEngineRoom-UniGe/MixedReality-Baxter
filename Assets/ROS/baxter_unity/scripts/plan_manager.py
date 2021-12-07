@@ -124,7 +124,7 @@ class PlanManager():
             # Publish paused image
             if(self.action_idx != 0):
                 img = cv2.imread(self.images_path + "step" + str(self.action_idx - 1) + "_paused.png")
-                img_resized = cv2.resize(img, (1000, 600), interpolation = cv2.INTER_AREA)
+                img_resized = cv2.resize(img, (1020, 600), interpolation = cv2.INTER_AREA)
                 img_msg = CvBridge().cv2_to_imgmsg(img_resized)
                 self.image_pub.publish(img_msg)
             self.publish_next_later()
@@ -155,7 +155,7 @@ class PlanManager():
 
             # If certain step of plan is reached, publish new image with instructions
             img = cv2.imread(self.images_path + "step" + str(self.action_idx) + ".png")
-            img_resized = cv2.resize(img, (1000, 600), interpolation = cv2.INTER_AREA)
+            img_resized = cv2.resize(img, (1020, 600), interpolation = cv2.INTER_AREA)
             img_msg = CvBridge().cv2_to_imgmsg(img_resized)
             self.image_pub.publish(img_msg)
 
@@ -163,7 +163,24 @@ class PlanManager():
 
         # If last "action_done" message, save total task time and exit
         elif self.action_idx == self.plan_length:
-            elapsed_task_time = time.time() - self.task_time
+            self.pause_time = time.time()
+            current_task_reader_val = self.reader_task.is_paused
+            # Loop until user signals end of collaboration
+            while current_task_reader_val == self.reader_task.is_paused:
+                try:
+                    rospy.sleep(0.2)
+                except KeyboardInterrupt:
+                    self.reader_task.stop()
+                    self.thread.join()
+                    self.logger.close()
+                    rospy.sleep(0.5)
+                    rospy.signal_shutdown("Process shutdown")
+
+            now = time.time()
+            elapsed_pause_time = now - self.pause_time
+            self.logger.log("Action {0} - Robot Idle Time: {1} seconds".format(self.action_idx, elapsed_pause_time))
+
+            elapsed_task_time = now - self.task_time
             self.logger.log("Total Task Time: {0} seconds".format(elapsed_task_time))
 
             # Publish end screen image to display at the end of planning steps
