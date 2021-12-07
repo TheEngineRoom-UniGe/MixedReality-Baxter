@@ -18,9 +18,9 @@ public class BaxterController : MonoBehaviour
 {
     // Timing variables for rendering trajectories
     private float jointAssignmentWait = 0.005f;
-    private float componentHandoverWait = 15.0f;
-    private float pickPlaceWait = 9.0f;
-    private float handoverWait = 9.0f;
+    private float componentHandoverWait = 15.5f;
+    private float pickPlaceWait = 5.5f;
+    private float handoverWait = 6.0f;
     private float drawTime = 12.0f;
 
     // Robot
@@ -595,10 +595,10 @@ public class BaxterController : MonoBehaviour
         for (int poseIndex = 0; poseIndex < response.arm_trajectory.trajectory.Length; poseIndex++)
         {
             // Slow down rendering when returning to home position
-            if(poseIndex == response.arm_trajectory.trajectory.Length - 1)
+            /*if(poseIndex == response.arm_trajectory.trajectory.Length - 1)
             {
                 steps *= 2;
-            }
+            }*/
             // For every robot pose in trajectory plan
             for (int jointConfigIndex = 0; jointConfigIndex < response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length; jointConfigIndex++)
             {
