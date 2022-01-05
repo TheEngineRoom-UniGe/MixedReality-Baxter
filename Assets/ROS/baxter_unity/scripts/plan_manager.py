@@ -7,6 +7,7 @@ import cv2
 import serial
 import threading
 import time
+import datetime
 import argparse
 
 from std_msgs.msg import Bool
@@ -20,10 +21,10 @@ from cv_bridge import CvBridge
 class Logger():
 
     def __init__(self, logfilename):
-        self.f = open(logfilename, "a")
+        self.f = open(logfilename, "w")
 
     def log(self, msg):
-        self.f.write("{0}: {1}\n".format(time.ctime(time.time()), msg))
+        self.f.write("{0}: {1}\n".format(datetime.datetime.fromtimestamp(rospy.Time.now().secs), msg))
 
     def close(self):
         self.f.close()
@@ -64,6 +65,7 @@ class PlanManager():
         rospy.Subscriber("/action_done", Bool, self.action_done_callback)
         self.next_action_pub = rospy.Publisher('/next_action', NextAction, queue_size=10)
         self.image_pub = rospy.Publisher('/robot/xdisplay', Image, queue_size=10)
+        self.rec_pub = rospy.Publisher('/recording', Bool, queue_size=10)
 
         # Start internal task to monitor serial input
         self.serial_port = serial.Serial('/dev/ttyACM0')
@@ -72,7 +74,7 @@ class PlanManager():
         self.thread.start()
 
         # Internal logger
-        self.logger = Logger(pkg_path_name + "/logs/" + log_file_name + ".txt")
+        self.logger = Logger(pkg_path_name + "/data/task_logs/" + log_file_name + ".txt")
         self.logger.log("------------------------")
 
         # Variables to keep track of time for each action and robot idle time
@@ -105,7 +107,15 @@ class PlanManager():
         # Wait until first user input
         while not self.reader_task.got_first_input:
             rospy.sleep(0.5)
+        self.notify_data_saver(True)
+        rospy.sleep(0.5)
         self.next_action_handler()
+
+    # Notify data_saver process that user started/ended interaction
+    def notify_data_saver(self, boolV):
+        bool_msg = Bool()
+        bool_msg.data = boolV
+        self.rec_pub.publish(bool_msg)
 
     # Handles acknowledgment for previous action planned
     def action_done_callback(self, msg):
@@ -188,10 +198,11 @@ class PlanManager():
             img_msg = CvBridge().cv2_to_imgmsg(img)
             self.image_pub.publish(img_msg)
 
-            # Stop thread process, close log file and exit
+            # Stop thread process, close log file, notify data_saver process and exit
             self.reader_task.stop()
             self.thread.join()
             self.logger.close()
+            self.notify_data_saver(False)
             rospy.sleep(0.5)
             rospy.signal_shutdown("Plan finished")
 

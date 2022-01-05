@@ -1,0 +1,5 @@
+2022-01-05 11:15:05: ------------------------
+2022-01-05 11:16:16: Action 1 - Robot Idle Time: 3.2037410736083984 seconds
+2022-01-05 11:16:58: Action 3 - Robot Idle Time: 6.207214593887329 seconds
+2022-01-05 11:18:26: Action 8 - Robot Idle Time: 3.403949737548828 seconds
+2022-01-05 11:18:26: Total Task Time: 155.6930868625641 seconds

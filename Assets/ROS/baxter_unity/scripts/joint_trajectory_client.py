@@ -137,14 +137,14 @@ class Trajectory(object):
             ['s0', 's1', 'e0', 'e1', 'w0', 'w1', 'w2']]
             
     def open_gripper(self): 
-    	gripperCommandMsg = GripperCommandActionGoal()
-    	gripperCommandMsg.goal.command.position = 100.0
-    	self.gripper_publisher.publish(gripperCommandMsg)
-    	
+        gripperCommandMsg = GripperCommandActionGoal()
+        gripperCommandMsg.goal.command.position = 100.0
+        self.gripper_publisher.publish(gripperCommandMsg)
+        
     def close_gripper(self): 
-    	gripperCommandMsg = GripperCommandActionGoal()
-    	gripperCommandMsg.goal.command.position = 0.0
-    	self.gripper_publisher.publish(gripperCommandMsg)
+        gripperCommandMsg = GripperCommandActionGoal()
+        gripperCommandMsg.goal.command.position = 0.0
+        self.gripper_publisher.publish(gripperCommandMsg)
 
 
 def main():
@@ -180,7 +180,6 @@ def main():
     print("Enabling robot... ")
     rs.enable()
     print("Running...")
-    
 
     rospy.spin()
 

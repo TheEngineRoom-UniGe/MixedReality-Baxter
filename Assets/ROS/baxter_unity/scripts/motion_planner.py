@@ -72,7 +72,7 @@ class MotionPlanner:
             exception_str = """
                 Trajectory could not be planned for a destination of {} with starting joint angles {}.
                 Please make sure target and destination are reachable by the robot.
-            """.format(destination_pose, destination_pose)
+            """.format(destination_pose, start_joint_angles)
             exit(1)
 
         return plan[1]
@@ -96,7 +96,7 @@ class MotionPlanner:
             exception_str = """
                 Trajectory could not be planned for a destination of {} with starting joint angles {}.
                 Please make sure target and destination are reachable by the robot.
-            """.format(destination_pose, destination_pose)
+            """.format(final_joint_config, start_joint_config)
             exit(1)
 
         return plan[1]
