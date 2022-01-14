@@ -52,7 +52,7 @@ public class BaxterROSInterface : MonoBehaviour
 
     // Offset variables for picking and placing objects
     private readonly Vector3 liftOffset = Vector3.up * 0.1f;
-    private readonly float depthOffset = 0.135f;
+    private readonly float depthOffset = 0.12f;
     private readonly float heightOffset = 0.295f;
 
     // Other scene objects (buttons, marker)
@@ -144,8 +144,8 @@ public class BaxterROSInterface : MonoBehaviour
         imageTarget.GetComponent<Behaviour>().enabled = false;
         imageTarget.SetActive(false);
 
-        backButton.transform.SetPositionAndRotation(imTargetPosition + Vector3.left * 0.75f + Vector3.back * 0.3f, Quaternion.identity);
-        backButton.SetActive(true);
+        //backButton.transform.SetPositionAndRotation(imTargetPosition + Vector3.left * 0.75f + Vector3.back * 0.3f, Quaternion.identity);
+        //backButton.SetActive(true);
 
         var spawnPosition = imTargetPosition + Vector3.forward * depthOffset - Vector3.up * heightOffset;
         controller.SpawnRobotAndInterface(spawnPosition);
@@ -220,7 +220,8 @@ public class BaxterROSInterface : MonoBehaviour
 
                 // Pick Pose
                 pickPosition = components[ID].transform.localPosition + liftOffset;
-                pickOrientation = Quaternion.Euler(180, 90, 0);
+                //pickOrientation = Quaternion.Euler(180, 90, 0);
+                pickOrientation = Quaternion.Euler(180, 0, 0);
 
                 var handoverPosition = handoverPositionLeft;
                 if (pickPosition.x > 0)
@@ -290,8 +291,8 @@ public class BaxterROSInterface : MonoBehaviour
             {
                 DeleteHologram(msg.op[0]);
             }
-            //yield return new WaitForSeconds(0.5f);
-            //ros.Publish(actionDoneTopicName, new Bool());
+            /*yield return new WaitForSeconds(0.5f);
+            ros.Publish(actionDoneTopicName, new Bool());*/
         }
 
         // Else, if planning for both arms, wait for completion of both trajectories before next action

@@ -85,7 +85,7 @@ PlayerSettings:
   resizableWindow: 0
   useMacAppStoreValidation: 0
   macAppStoreCategory: public.app-category.games
-  gpuSkinning: 1
+  gpuSkinning: 0
   xboxPIXTextureCapture: 0
   xboxEnableAvatar: 0
   xboxEnableKinect: 0
@@ -128,7 +128,9 @@ PlayerSettings:
     16:9: 1
     Others: 1
   bundleVersion: 0.1
-  preloadedAssets: []
+  preloadedAssets:
+  - {fileID: 7278939116420171688, guid: a4a2ec535f58d234cb1d884f85086016, type: 2}
+  - {fileID: -8512443632611896771, guid: cc7407aeb25dadd4d872d4690fc40b43, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -274,6 +276,9 @@ PlayerSettings:
     m_DynamicBatching: 0
   - m_BuildTarget: WebGL
     m_StaticBatching: 0
+    m_DynamicBatching: 0
+  - m_BuildTarget: Windows Store Apps
+    m_StaticBatching: 1
     m_DynamicBatching: 0
   m_BuildTargetGraphicsJobs:
   - m_BuildTarget: MacStandaloneSupport
@@ -617,7 +622,7 @@ PlayerSettings:
     2162788: 
     2162888: Assets/Resources/Logo/logo-300.png
     2228424: Assets/Resources/Logo/logo-620.png
-  metroTileShortName: MixedRealityHRC
+  metroTileShortName: MixedRealityBaxter
   metroTileShowName: 0
   metroMediumTileShowName: 0
   metroLargeTileShowName: 0
