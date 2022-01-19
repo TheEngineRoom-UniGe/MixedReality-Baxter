@@ -3,9 +3,8 @@ using System.Collections;
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.BaxterUnity;
-using Unity.Robotics.UrdfImporter;
 
-public class BaxterROSInterface : MonoBehaviour
+public class AnticipatoryTrajectoryROSInterface : MonoBehaviour
 {
     // ROS Connector
     private ROSConnection ros;
@@ -14,8 +13,7 @@ public class BaxterROSInterface : MonoBehaviour
     public GameObject robot;
     
     // Variables for holo rendering
-    public int renderMode;
-    public int steps;
+    public int steps = 5;
 
     // Variables required for ROS communication
     public string plannerServiceName = "baxter_unity_motion_planner";
@@ -43,11 +41,6 @@ public class BaxterROSInterface : MonoBehaviour
     public GameObject handoverPositionRight;
     public GameObject placePositionMiddle;
 
-    // Materials and URDF
-    public UrdfRobot urdfRobot;
-    public Material drawingMat;
-    public GameObject[] ghostPrefabs;
-
     // Offset variables for picking and placing objects
     private readonly Vector3 liftOffset = Vector3.up * 0.1f;
     private readonly float depthOffset = 0.12f;
@@ -55,7 +48,6 @@ public class BaxterROSInterface : MonoBehaviour
 
     // Other scene objects (buttons, marker)
     public GameObject imageTarget;
-    public GameObject backButton;
 
     // Utility variables
     private GameObject[] tools;
@@ -67,7 +59,6 @@ public class BaxterROSInterface : MonoBehaviour
     private Queue componentsIDQueue;
     private Queue toolsIDQueue;
 
-    private BaxterController contr;
     private AnticipatoryTrajectoryController controller;
 
     public enum RenderModes
@@ -93,18 +84,6 @@ public class BaxterROSInterface : MonoBehaviour
         ros.Subscribe<NextActionMsg>(nextActionTopicName, PlanNextAction);
         //ros.RegisterPublisher<Bool>(actionDoneTopicName);
 
-        // Instantiate Baxter Controller depending on render mode
-        switch(renderMode)
-        {
-            case (int)RenderModes.AnticipatoryTrajectory:
-                break;
-            case (int)RenderModes.FinalPose:
-                break;
-            case (int)RenderModes.GhostTrajectory:
-                break;
-        }
-        //controller = gameObject.AddComponent<BaxterController>();
-        //controller.Init(robot, steps, urdfRobot, drawingMat, ghostPrefabs, renderMode);
         controller = gameObject.AddComponent<AnticipatoryTrajectoryController>();
         controller.Init(robot, steps);
 
@@ -278,31 +257,23 @@ public class BaxterROSInterface : MonoBehaviour
         // If planning for single arm, wait for completion of trajectory execution, depending on arm
         if(!planForBoth)
         {
-            if (renderMode != (int)BaxterController.RenderModes.AnticipatoryTrajectory)
-            {
-                yield return new WaitForSeconds(1.0f);
-                DeleteHologram(msg.op[0]);
-            }
-
             if (arm == "left")
             {
                 while (controller.leftCoroutineQueue.Count == 1)
                 {
-                    yield return new WaitForSeconds(0.5f);
+                    yield return new WaitForSeconds(0.1f);
                 }
             }
             else
             {
                 while (controller.rightCoroutineQueue.Count == 1)
                 {
-                    yield return new WaitForSeconds(0.5f);
+                    yield return new WaitForSeconds(0.1f);
                 }
             }
 
-            if (renderMode == (int)BaxterController.RenderModes.AnticipatoryTrajectory)
-            {
-                DeleteHologram(msg.op[0]);
-            }
+            DeleteHologram(msg.op[0]);
+            
             /*yield return new WaitForSeconds(0.5f);
             ros.Publish(actionDoneTopicName, new Bool());*/
         }
@@ -310,23 +281,15 @@ public class BaxterROSInterface : MonoBehaviour
         // Else, if planning for both arms, wait for completion of both trajectories before next action
         else
         {
-            if (renderMode != (int)BaxterController.RenderModes.AnticipatoryTrajectory)
-            {
-                yield return new WaitForSeconds(1.0f);
-                DeleteHologram(msg.op[0]);
-                DeleteHologram(msg.op[1]);
-            }
-
             while (controller.rightCoroutineQueue.Count == 1 || controller.leftCoroutineQueue.Count == 1)
             {
-                yield return new WaitForSeconds(0.25f);
+                yield return new WaitForSeconds(0.1f);
             }
 
-            if (renderMode == (int)BaxterController.RenderModes.AnticipatoryTrajectory)
-            {
-                DeleteHologram(msg.op[0]);
-                DeleteHologram(msg.op[1]);
-            }
+            // After completion of trajectory, remove holograms
+            DeleteHologram(msg.op[0]);
+            DeleteHologram(msg.op[1]);
+            
             /*ros.Publish(actionDoneTopicName, new Bool());
             yield return new WaitForSeconds(0.5f);
             ros.Publish(actionDoneTopicName, new Bool());*/
@@ -361,27 +324,6 @@ public class BaxterROSInterface : MonoBehaviour
 
     public void ResetScene()
     {
-        // Revert objects to initial positions and orientations
-        /*for (int i = 0; i < pickPoses.Length; i++)
-        {
-            pickPoses[i].transform.localPosition = pickInitialPositions[i];
-            pickPoses[i].transform.localRotation = pickInitialRotations[i];
-            // Reactivate object and make it physically interactable again
-            pickPoses[i].GetComponent<Rigidbody>().isKinematic = false;
-            pickPoses[i].SetActive(true);
-        }
 
-        // Revert tools to initial positions and orientations
-        for (int i = 0; i < tools.Length; i++)
-        {
-            tools[i].transform.localPosition = toolsInitialPositions[i];
-            tools[i].transform.localRotation = toolsInitialRotations[i];
-            // Reactivate tool and make it physically interactable again
-            tools[i].GetComponent<Rigidbody>().isKinematic = false;
-            tools[i].SetActive(true);
-        }
-
-        var request = new JointStateServiceRequest();
-        ros.SendServiceMessage<JointStateServiceResponse>(jointStateServiceName, request, controller.JointStateServiceResponse);*/
     }
 }

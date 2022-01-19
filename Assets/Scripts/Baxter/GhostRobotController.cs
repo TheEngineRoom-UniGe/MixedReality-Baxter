@@ -1,6 +1,4 @@
 using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
 
 using RosMessageTypes.BaxterUnity;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
@@ -14,13 +12,10 @@ using Unity.Robotics.UrdfImporter;
 
 using UnityEngine;
 
-public class BaxterController : MonoBehaviour
+public class GhostRobotController : MonoBehaviour
 {
     // Timing variables for rendering trajectories
     private float jointAssignmentWait = 0.005f;
-    private float componentHandoverWait = 15.5f;
-    private float pickPlaceWait = 5.5f;
-    private float handoverWait = 6.0f;
     private float drawTime = 14.0f;
 
     // Robot
@@ -67,21 +62,19 @@ public class BaxterController : MonoBehaviour
     // Utility variables
     public Queue leftCoroutineQueue;
     public Queue rightCoroutineQueue;
-    private int steps;
 
     // Drawing components
+    private int minN = 6;
+    private float red = 0.5471f;
     private RobotVisualization robotVisualization;
     private Drawing3d drawing3;
     private Material mat;
-    private int minN = 6;
-    private float red = 0.5471f;
     private GameObject[] ghostPrefabs;
 
     public enum RenderModes
     {
         GhostTrajectory,
         FinalPose,
-        AnticipatoryTrajectory
     };
 
     private enum Poses
@@ -94,10 +87,9 @@ public class BaxterController : MonoBehaviour
         Return
     };
 
-    public void Init(GameObject baxter, int steps, UrdfRobot urdfRobot, Material mat, GameObject[] ghostPrefabs, int renderMode)
+    public void Init(GameObject baxter, UrdfRobot urdfRobot, Material mat, GameObject[] ghostPrefabs, int renderMode)
     {
         this.baxter = baxter;
-        this.steps = steps;
         this.urdfRobot = urdfRobot;
         this.mat = mat;
         this.renderMode = renderMode;
@@ -107,11 +99,8 @@ public class BaxterController : MonoBehaviour
         leftCoroutineQueue = new Queue();
         rightCoroutineQueue = new Queue();
 
-        if(renderMode != (int)RenderModes.AnticipatoryTrajectory)
-        {
-            robotVisualization = new RobotVisualization(this.urdfRobot);
-            drawing3 = Drawing3d.Create(10.0f, mat);
-        }
+        robotVisualization = new RobotVisualization(this.urdfRobot);
+        drawing3 = Drawing3d.Create(10.0f, mat);
     }
 
     private void GetRobotReference()
@@ -191,24 +180,6 @@ public class BaxterController : MonoBehaviour
         baxter.SetActive(true);
     }
 
-    private void CloseGripper(string hand)
-    {
-        var gripper = leftHand;
-        if(hand == "right")
-        {
-            gripper = rightHand;
-        }
-        
-        var leftDrive = gripper[0].xDrive;
-        var rightDrive = gripper[1].xDrive;
-
-        leftDrive.target = -0.005f;
-        rightDrive.target = 0.005f;
-
-        gripper[0].xDrive = leftDrive;
-        gripper[1].xDrive = rightDrive;
-    }
-
     private void OpenGripper(string hand)
     {
         var gripper = leftHand;
@@ -222,6 +193,24 @@ public class BaxterController : MonoBehaviour
 
         leftDrive.target = 0.025f;
         rightDrive.target = -0.025f;
+
+        gripper[0].xDrive = leftDrive;
+        gripper[1].xDrive = rightDrive;
+    }
+
+    private void CloseGripper(string hand)
+    {
+        var gripper = leftHand;
+        if (hand == "right")
+        {
+            gripper = rightHand;
+        }
+
+        var leftDrive = gripper[0].xDrive;
+        var rightDrive = gripper[1].xDrive;
+
+        leftDrive.target = -0.005f;
+        rightDrive.target = 0.005f;
 
         gripper[0].xDrive = leftDrive;
         gripper[1].xDrive = rightDrive;
@@ -335,10 +324,6 @@ public class BaxterController : MonoBehaviour
             {
                 StartCoroutine(RenderFinalPoseOnly(response));
             }
-            else if(renderMode == (int)RenderModes.AnticipatoryTrajectory)
-            {
-                StartCoroutine(ExecuteAnticipatoryTrajectory(response));
-            } 
         }
         else
         {
@@ -349,19 +334,16 @@ public class BaxterController : MonoBehaviour
     private IEnumerator RenderGhostTrajectory(ActionServiceResponse response)
     {
         var arm = response.arm_trajectory.arm;
-
-        var initialJointConfig = InitialJointConfig(arm);
-        double[] lastJointState = initialJointConfig.angles;
         var gripper = leftGripper;
-
-        var instantiatedGhosts = new List<GameObject>();
 
         var doDrawArm = false;
         var sign = 1;
         var drawObjectPose = (int)Poses.Place;
         var doDrawObject = false;
 
+        GameObject instantiatedObject = null;
         GameObject ghostPrefab = null;
+
         if(response.action == "pick_and_place")
         {
             if(response.pick_seq < 2)
@@ -395,6 +377,7 @@ public class BaxterController : MonoBehaviour
         
         // For every trajectory plan returned
         var jointState = new JointState();
+
         jointState.name = left_joint_names;
         var jointArticulationBodies = leftJointArticulationBodies;
         if (arm == "right")
@@ -410,16 +393,15 @@ public class BaxterController : MonoBehaviour
             // For every robot pose in trajectory plan
             for (int jointConfigIndex = 0; jointConfigIndex < response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length; jointConfigIndex++)
             {
-                var jointPositions = response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points[jointConfigIndex].positions;
-                double[] result = jointPositions.Select(r => (double)r * Mathf.Rad2Deg).ToArray();
+                var jointPositionsRad = response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points[jointConfigIndex].positions;
 
-                // If trajectory is short, draw one every 3 poses
-                if (response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length < minN && jointConfigIndex % 3 == 0)
+                // If trajectory is short, draw one every 5 poses
+                if (response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length < minN && jointConfigIndex % 5 == 0)
                 {
                     doDrawArm = true;
                 }
-                // If longer, draw one every 5 poses
-                else if (response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length >= minN && jointConfigIndex % 5 == 0)
+                // If longer, draw one every 10 poses
+                else if (response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length >= minN && jointConfigIndex % 10 == 0)
                 {
                     doDrawArm = true;
                 }
@@ -427,26 +409,25 @@ public class BaxterController : MonoBehaviour
                 // If place pose, draw last position
                 if (poseIndex == drawObjectPose && jointConfigIndex == response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length - 1)
                 {
+                    CloseGripper(arm);
                     doDrawObject = true;
                 }
 
                 for (int joint = 0; joint < jointArticulationBodies.Length; joint++)
                 {
                     var joint1XDrive = jointArticulationBodies[joint].xDrive;
-                    joint1XDrive.target = (float) result[joint];
+                    joint1XDrive.target = (float)jointPositionsRad[joint] * Mathf.Rad2Deg;
                     jointArticulationBodies[joint].xDrive = joint1XDrive;
                 }
 
-                yield return new WaitForSeconds(jointAssignmentWait * 5.0f);
-
-                lastJointState = result;
+                yield return new WaitForSeconds(jointAssignmentWait);
 
                 if (doDrawArm)
                 {
                     jointState.position = new double[9];
-                    for (int k = 0; k < result.Length; k++)
+                    for (int k = 0; k < jointPositionsRad.Length; k++)
                     {
-                        jointState.position[k] = jointPositions[k];
+                        jointState.position[k] = jointPositionsRad[k];
                         if (k == 0)
                         {
                             jointState.position[k] += sign * Mathf.PI / 4.0f;
@@ -455,8 +436,7 @@ public class BaxterController : MonoBehaviour
                     }
                     if (doDrawObject)
                     {
-                        var newGo = Instantiate(ghostPrefab, gripper.transform.position, gripper.transform.rotation);
-                        instantiatedGhosts.Add(newGo);
+                        instantiatedObject = Instantiate(ghostPrefab, gripper.transform.position, gripper.transform.rotation);
                         doDrawObject = false;
                     }
 
@@ -468,26 +448,21 @@ public class BaxterController : MonoBehaviour
             }
         }
         
-        yield return new WaitForSeconds(drawTime);
-        foreach(GameObject go in instantiatedGhosts)
-        {
-            Destroy(go);
-        }
-        instantiatedGhosts.Clear();
+        yield return new WaitForSeconds(drawTime - 0.5f);
+        Destroy(instantiatedObject);
         EndTrajectoryExecution(arm);
     }
 
     private IEnumerator RenderFinalPoseOnly(ActionServiceResponse response)
     {
         var arm = response.arm_trajectory.arm;
-        var initialJointConfig = InitialJointConfig(arm);
-        double[] lastJointState = initialJointConfig.angles;
-        var instantiatedGhosts = new List<GameObject>();
-        var sign = 1;
-        var gripper = leftGripper;
         var finalPose = (int)Poses.Place;
+        var gripper = leftGripper;
+        var sign = 1;
 
+        GameObject instantiatedObject = null;
         GameObject ghostPrefab = null;
+
         if (response.action == "pick_and_place")
         {
             if (response.pick_seq < 2)
@@ -521,6 +496,7 @@ public class BaxterController : MonoBehaviour
 
         // For every trajectory plan returned
         var jointState = new JointState();
+
         jointState.name = left_joint_names;
         var jointArticulationBodies = leftJointArticulationBodies;
         if (arm == "right")
@@ -537,12 +513,11 @@ public class BaxterController : MonoBehaviour
             for (int jointConfigIndex = 0; jointConfigIndex < response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length; jointConfigIndex++)
             {
                 var jointPositions = response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points[jointConfigIndex].positions;
-                double[] result = jointPositions.Select(r => (double)r * Mathf.Rad2Deg).ToArray();
-
+          
                 for (int joint = 0; joint < jointArticulationBodies.Length; joint++)
                 {
                     var joint1XDrive = jointArticulationBodies[joint].xDrive;
-                    joint1XDrive.target = (float)result[joint];
+                    joint1XDrive.target = (float)jointPositions[joint] * Mathf.Rad2Deg;
                     jointArticulationBodies[joint].xDrive = joint1XDrive;
                 }
 
@@ -551,8 +526,9 @@ public class BaxterController : MonoBehaviour
                 // Render only final pose of the action
                 if (poseIndex == finalPose && jointConfigIndex == response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length - 1)
                 {
+                    CloseGripper(arm);
                     jointState.position = new double[9];
-                    for (int k = 0; k < result.Length; k++)
+                    for (int k = 0; k < jointPositions.Length; k++)
                     {
                         jointState.position[k] = jointPositions[k];
                         if (k == 0)
@@ -565,103 +541,14 @@ public class BaxterController : MonoBehaviour
                     drawing3 = Drawing3d.Create(drawTime, mat);
                     robotVisualization.DrawGhost(drawing3, jointState, new Color(red, 0, 0, 1.0f));
 
-                    var newGo = Instantiate(ghostPrefab, gripper.transform.position, gripper.transform.rotation);
-                    instantiatedGhosts.Add(newGo);
+                    instantiatedObject = Instantiate(ghostPrefab, gripper.transform.position, gripper.transform.rotation);
                 }
             }
         }
 
         yield return new WaitForSeconds(drawTime - 0.5f);
-        foreach (GameObject go in instantiatedGhosts)
-        {
-            Destroy(go);
-        }
-        instantiatedGhosts.Clear();
+        Destroy(instantiatedObject);
         EndTrajectoryExecution(arm);
-    }
-
-    private IEnumerator ExecuteAnticipatoryTrajectory(ActionServiceResponse response)
-    {
-        var arm = response.arm_trajectory.arm;
-        var initialJointConfig = InitialJointConfig(arm);
-        var steps = this.steps;
-        double[] lastJointState = initialJointConfig.angles;
-
-        // For every trajectory plan returned
-        var jointArticulationBodies = leftJointArticulationBodies;
-        if (arm == "right")
-        {
-            jointArticulationBodies = rightJointArticulationBodies;
-        }
-        yield return new WaitForSeconds(0.1f);
-        for (int poseIndex = 0; poseIndex < response.arm_trajectory.trajectory.Length; poseIndex++)
-        {
-            // Slow down rendering when returning to home position
-            /*if(poseIndex == response.arm_trajectory.trajectory.Length - 1)
-            {
-                steps *= 2;
-            }*/
-            // For every robot pose in trajectory plan
-            for (int jointConfigIndex = 0; jointConfigIndex < response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points.Length; jointConfigIndex++)
-            {
-                var jointPositions = response.arm_trajectory.trajectory[poseIndex].joint_trajectory.points[jointConfigIndex].positions;
-                double[] result = jointPositions.Select(r => (double)r * Mathf.Rad2Deg).ToArray();
-
-                for (int i = 0; i <= steps; i++)
-                {
-                    for (int joint = 0; joint < jointArticulationBodies.Length; joint++)
-                    {
-                        var joint1XDrive = jointArticulationBodies[joint].xDrive;
-                        joint1XDrive.target = (float)(lastJointState[joint] + (result[joint] - lastJointState[joint]) * (1.0f / steps) * i);
-                        jointArticulationBodies[joint].xDrive = joint1XDrive;
-                    }
-
-                    yield return new WaitForSeconds(jointAssignmentWait);
-                }
-                lastJointState = result;
-
-            }
-            // Make sure gripper is open at the beginning
-            if (poseIndex == (int)Poses.PreGrasp || poseIndex == (int)Poses.Place)
-            {
-                yield return new WaitForSeconds(0.5f);
-                OpenGripper(arm);
-            }
-            // Close gripper on object grasping
-            if (poseIndex == (int)Poses.Grasp)
-            {
-                yield return new WaitForSeconds(0.5f);
-                CloseGripper(arm);
-            }
-            // Handle different cases based on the executed action
-            if (response.action == "pick_and_place" && poseIndex == (int)Poses.Place)
-            {
-                yield return new WaitForSeconds(pickPlaceWait);
-                EndTrajectoryExecution(arm);
-            }
-            else if (response.action == "tool_handover" && poseIndex == (int)Poses.Move)
-            {
-                yield return new WaitForSeconds(handoverWait);
-                EndTrajectoryExecution(arm);
-            }
-            else if (response.action == "component_handover")
-            {
-                if (poseIndex == (int)Poses.Move)
-                {
-                    yield return new WaitForSeconds(componentHandoverWait);
-                }
-                else if (poseIndex == (int)Poses.Place)
-                {
-                    yield return new WaitForSeconds(0.5f);
-                    EndTrajectoryExecution(arm);
-                }
-            }
-            else if (response.action == "put_back" && poseIndex == (int)Poses.Place)
-            {
-                yield return new WaitForSeconds(pickPlaceWait);
-                EndTrajectoryExecution(arm);
-            }
-        }
     }
 
     private void EndTrajectoryExecution(string arm)
@@ -672,8 +559,6 @@ public class BaxterController : MonoBehaviour
         }
         else
             rightCoroutineQueue.Dequeue();
-
         OpenGripper(arm);
-        
     }
 }
