@@ -378,43 +378,8 @@ class MotionPlanner:
         self.publisher.publish(action_msg)
 
         return response
-
-def test_attach_collision_object(scene, timeout, box_name, obstacle):
-    start = rospy.get_time()
-    seconds = rospy.get_time()
-    while (seconds - start < timeout) and not rospy.is_shutdown():
-        # Test if the box is in attached objects
-        attached_objects = scene.get_attached_objects()
-        is_attached = len(attached_objects.keys()) > 0
-        if not is_attached:
-            spawn_obstacles(scene, obstacle)
-        else:
-            return True
-        rospy.sleep(0.1)
-        seconds = rospy.get_time()
-        
-        print(attached_objects)
-
-    # If we exited the while loop without returning then we timed out
-    return False
-
-# Spawn obstacles for robot planning scene
-def spawn_obstacles(scene, obstacle):
-
-    '''
-    p2 = PoseStamped()
-    p2.header.frame_id = "world"
-    p2.pose.position.x = 1
-    p2.pose.position.y = 0
-    p2.pose.position.z = 1
-    p2.pose.orientation.w = 1
-    scene.add_box("front_wall", p2, (0.1, 2, 2))
-    '''
-
-    rospy.sleep(2)
-    print("Obstacles added")
-    
-    
+   
+   
 def main():
     # Initialize node
     rospy.init_node('motion_planner_service_node', anonymous=True)
