@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find TERGlove_ROS_driver)/launch/imu_driver_buffer.launch" />
+  
+</launch>

@@ -9,6 +9,7 @@ import threading
 import time
 import datetime
 import argparse
+import os
 
 from std_msgs.msg import Bool
 from sensor_msgs.msg import Image
@@ -61,7 +62,7 @@ class SerialReaderTask:
 # Plan manager class to read and publish robot's actions
 class PlanManager():
 
-    def __init__(self, pkg_path_name, log_file_name):
+    def __init__(self, pkg_path_name, exp_name, condition):
         rospy.Subscriber("/action_done", Bool, self.action_done_callback)
         self.next_action_pub = rospy.Publisher('/next_action', NextAction, queue_size=10)
         self.image_pub = rospy.Publisher('/robot/xdisplay', Image, queue_size=10)
@@ -73,8 +74,21 @@ class PlanManager():
         self.thread = threading.Thread(target=self.reader_task.run, args=(self.serial_port,))
         self.thread.start()
 
+        # Initialize folders for data acquisition
+        exp_folder_path = pkg_path_name + "/data/" + exp_name
+        if not os.path.exists(exp_folder_path):
+            os.makedirs(exp_folder_path)
+            # Initialize sub-folder for video frames 
+            os.makedirs(exp_folder_path + "/frames")
+
         # Internal logger
-        self.logger = Logger(pkg_path_name + "/data/task_logs/" + log_file_name + ".txt")
+        self.logger = Logger(exp_folder_path + "/task_log.txt")
+        # Condition 1,2,3 implies experiment with holographic interface
+        if condition != 0:
+            self.logger.log("Subject {0} - Experimental Condition: {1}".format(exp_name, condition))
+        # Condition 0 implies experiment without hololens device
+        else:
+            self.logger.log("Subject {0} - No HoloLens Condition".format(exp_name[:3]))
         self.logger.log("------------------------")
 
         # Variables to keep track of time for each action and robot idle time
@@ -217,7 +231,7 @@ class PlanManager():
                 self.thread.join()
                 self.logger.close()
                 rospy.sleep(0.5)
-                rospy.signal_shutdown("Process shutdown")
+                exit(1)
 
         # If not first action, keep track of robot idle time during the pause
         if(self.action_idx != 0):
@@ -225,6 +239,13 @@ class PlanManager():
             self.logger.log("Action {0} - Robot Idle Time: {1} seconds".format(self.action_idx, elapsed_pause_time))
 
         self.publish_next()
+
+    # Rooutine for killing thread and logger correctly on CTRL-C press
+    def close_all(self):
+        self.logger.close()
+        self.reader_task.stop()
+        self.thread.join()
+        rospy.signal_shutdown("Plan aborted")
 
 
 def main():
@@ -241,13 +262,20 @@ def main():
     required = parser.add_argument_group('required arguments')
     required.add_argument(
         '-f', '--file_name', required=True, type=str,
-        help='log file name'
+        help='Experiment file name'
+    )
+    required.add_argument(
+        '-c', '--cond', required=True, type=int,
+        help='Experimental Condition'
     )
     args = parser.parse_args(rospy.myargv()[1:])
-    log_file = args.file_name
+    exp_name = args.file_name
+    exp_cond = args.cond
 
     # Instantiate plan manager object
-    manager = PlanManager(pkg_path, log_file)
+    manager = PlanManager(pkg_path, exp_name, exp_cond)
+    rospy.on_shutdown(manager.close_all)
+
     manager.wait_for_first_input()
 
     rospy.spin()

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="file_name" default="test"/>
+
+  <!-- Convert serial video stream to a series of ROS-formatted images-->
+  <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <param name="video_device" value="/dev/video2" />
+    <param name="image_width" value="800" />
+    <param name="image_height" value="600" />
+    <param name="camera_name" value="usb_cam" />
+    <param name="camera_frame_id" value="usb_cam" />
+    <param name="framerate" value="20" />
+    <param name="pixel_format" value="yuyv"/>
+    <param name="io_method" value="mmap"/>
+  </node>
+
+  <!-- Stores video frames and logs each with corresponding timestamp -->
+  <node name="frames_saver" pkg="baxter_unity" type="frames_saver.py" args="--file_name $(arg file_name)" required="true" output="screen" />
+
+  <!-- Listen to imu drivers and log imu data with corresponding timestamp -->
+  <node name="imu_recorder_left" pkg="baxter_unity" type="imu_recording.py" args="--device left --file_name $(arg file_name)" required="true" output="screen" />
+  <node name="imu_recorder_right" pkg="baxter_unity" type="imu_recording.py" args="--device right --file_name $(arg file_name)" required="true" output="screen" />
+  
+</launch>

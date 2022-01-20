@@ -33,7 +33,9 @@ catkin_install_python(PROGRAMS
   scripts/motion_planner.py
   scripts/plan_manager.py
   scripts/joint_states_service.py
-  scripts/data_saver.py
+  scripts/frames_saver.py
+  scripts/imu_driver.py
+  scripts/imu_recording.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

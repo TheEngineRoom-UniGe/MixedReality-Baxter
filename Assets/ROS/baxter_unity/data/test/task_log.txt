@@ -1,0 +1,5 @@
+2022-01-19 16:13:33: Subject tes - No HoloLens Condition
+2022-01-19 16:13:33: ------------------------
+2022-01-19 16:18:08: Action 4 - Robot Idle Time: 17.421655893325806 seconds
+2022-01-19 16:20:17: Action 8 - Robot Idle Time: 6.607819557189941 seconds
+2022-01-19 16:20:17: Total Task Time: 269.0341320037842 seconds

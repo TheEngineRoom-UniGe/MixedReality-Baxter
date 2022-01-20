@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from os import ST_SYNCHRONOUS
 
 import rospy
 import argparse
@@ -21,16 +22,92 @@ from baxter_unity.srv import ActionService, ActionServiceRequest, ActionServiceR
 
 class MotionPlanner:
 
-    def __init__(self, limb, offset):
+    def __init__(self, limb, offset, obstacle):
         self.limb = limb
         self.height_offset = offset
+        self.obstacle = obstacle
         self.pick_seq = 0
         self.tool_seq = 0
+
+        self.scene = moveit_commander.PlanningSceneInterface(synchronous = True)
 
         group_name = self.limb + "_arm"
         self.move_group = moveit_commander.MoveGroupCommander(group_name)
 
         self.publisher = rospy.Publisher('baxter_moveit_trajectory', PlannedAction, queue_size=10)
+
+    def add_obstacles(self):
+        print("Adding obstacles to scene..")
+    
+        p = PoseStamped()
+        p.header.frame_id = "world"
+        p.pose.position.z = 0.4
+        p.pose.orientation.w = 1
+        box_name = "table"
+        self.scene.add_box(box_name, p, (2, 2, self.obstacle))
+        if(self.wait_for_state_update(box_name, box_is_known=True)):
+            print(box_name + " added to obstacles")
+        else:
+            print("Error while adding obstacles to planning scene")
+
+        p.header.frame_id = "world"
+        p.pose.position.x = 0.7
+        p.pose.position.y = -0.8
+        p.pose.position.z = 0.9
+        p.pose.orientation.w = 1
+        box_name = "bookshelf_side_front"
+        self.scene.add_box(box_name, p, (0.01, 0.2, 1.8))
+        if(self.wait_for_state_update(box_name, box_is_known=True)):
+            print(box_name + " added to obstacles")
+        else:
+            print("Error while adding obstacles to planning scene")
+
+        p.header.frame_id = "world"
+        p.pose.position.x = -0.1
+        p.pose.position.y = -0.8
+        p.pose.position.z = 0.9
+        p.pose.orientation.w = 1
+        box_name = "bookshelf_side_back"
+        self.scene.add_box(box_name, p, (0.01, 0.2, 1.8))
+        if(self.wait_for_state_update(box_name, box_is_known=True)):
+            print(box_name + " added to obstacles")
+        else:
+            print("Error while adding obstacles to planning scene")
+
+        p.header.frame_id = "world"
+        p.pose.position.x = 0.1
+        p.pose.position.y = -0.85
+        p.pose.position.z = 1.7
+        p.pose.orientation.w = 1
+        box_name = "bookshelf_top"
+        self.scene.add_box(box_name, p, (0.6, 0.4, 0.01))
+        if(self.wait_for_state_update(box_name, box_is_known=True)):
+            print(box_name + " added to obstacles")
+        else:
+            print("Error while adding obstacles to planning scene")
+
+    def wait_for_state_update(self, box_name, box_is_known=False, box_is_attached=False, timeout=10):
+
+        start = rospy.get_time()
+        seconds = rospy.get_time()
+        while (seconds - start < timeout) and not rospy.is_shutdown():
+            # Test if the box is in attached objects
+            attached_objects = self.scene.get_attached_objects([box_name])
+            is_attached = len(attached_objects.keys()) > 0
+
+            # Test if the box is in the scene.
+            is_known = box_name in self.scene.get_known_object_names()
+
+            # Test if we are in the expected state
+            if (box_is_attached == is_attached) and (box_is_known == is_known):
+                return True
+
+            # Sleep so that we give other threads time on the processor
+            rospy.sleep(0.1)
+            seconds = rospy.get_time()
+
+        # If we exited the while loop without returning then we timed out
+        return False
         
     # Plan straight line trajectory
     def plan_cartesian_trajectory(self, destination_pose, start_joint_angles):
@@ -43,7 +120,7 @@ class MotionPlanner:
         moveit_robot_state.joint_state = current_joint_state
         self.move_group.set_start_state(moveit_robot_state)
         self.move_group.set_goal_tolerance(10e-3)
-        (plan, fraction) = self.move_group.compute_cartesian_path([destination_pose], 0.05, 0.0)
+        (plan, fraction) = self.move_group.compute_cartesian_path([destination_pose], 0.025, 0.0)
 
         if not plan:
             exception_str = """
@@ -243,14 +320,16 @@ class MotionPlanner:
         initial_joint_configuration = copy.deepcopy(current_robot_joint_configuration)
 
         # Pre grasp - position gripper directly above target object
-        pre_grasp_traj = self.plan_cartesian_trajectory(req.pick_pose, current_robot_joint_configuration)
+        pre_pick_pose = copy.deepcopy(req.pick_pose)
+        pre_pick_pose.position.z -= self.height_offset * 0.5
+        pre_grasp_traj = self.plan_cartesian_trajectory(pre_pick_pose, current_robot_joint_configuration)
 
         previous_ending_joint_angles = pre_grasp_traj.joint_trajectory.points[-1].positions
         response.arm_trajectory.trajectory.append(pre_grasp_traj)
 
         # Grasp - lower gripper so that fingers are on either side of object
         pick_pose = copy.deepcopy(req.pick_pose)
-        pick_pose.position.z -= self.height_offset
+        pick_pose.position.z -= self.height_offset * 0.9
         grasp_traj = self.plan_cartesian_trajectory(pick_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = grasp_traj.joint_trajectory.points[-1].positions
@@ -258,6 +337,7 @@ class MotionPlanner:
 
         # Pick Up - raise gripper back to the pre grasp position
         lift_pose = copy.deepcopy(req.pick_pose)
+        lift_pose.position.z -= self.height_offset * 0.5
         lift_up_traj = self.plan_cartesian_trajectory(lift_pose, previous_ending_joint_angles)
 
         previous_ending_joint_angles = lift_up_traj.joint_trajectory.points[-1].positions
@@ -277,6 +357,14 @@ class MotionPlanner:
         previous_ending_joint_angles = put_back_traj.joint_trajectory.points[-1].positions
         response.arm_trajectory.trajectory.append(put_back_traj)
 
+        # Move away from obstacles
+        move_away_pose = copy.deepcopy(req.pick_pose)
+        move_away_pose.position.y += 0.3
+        move_away_traj = self.plan_cartesian_trajectory(move_away_pose, previous_ending_joint_angles)
+
+        previous_ending_joint_angles = move_away_traj.joint_trajectory.points[-1].positions
+        response.arm_trajectory.trajectory.append(move_away_traj)
+
         # Return to home pose
         return_home_traj = self.plan_return_to_home(initial_joint_configuration, previous_ending_joint_angles)
         response.arm_trajectory.trajectory.append(return_home_traj)
@@ -291,36 +379,45 @@ class MotionPlanner:
 
         return response
 
+def test_attach_collision_object(scene, timeout, box_name, obstacle):
+    start = rospy.get_time()
+    seconds = rospy.get_time()
+    while (seconds - start < timeout) and not rospy.is_shutdown():
+        # Test if the box is in attached objects
+        attached_objects = scene.get_attached_objects()
+        is_attached = len(attached_objects.keys()) > 0
+        if not is_attached:
+            spawn_obstacles(scene, obstacle)
+        else:
+            return True
+        rospy.sleep(0.1)
+        seconds = rospy.get_time()
+        
+        print(attached_objects)
+
+    # If we exited the while loop without returning then we timed out
+    return False
 
 # Spawn obstacles for robot planning scene
 def spawn_obstacles(scene, obstacle):
-    
-    p1 = PoseStamped()
-    p1.header.frame_id = "world"
-    p1.pose.position.x = 0
-    p1.pose.position.y = 0.
-    p1.pose.position.z = 0.4
-    scene.add_box("table", p1, (2, 2, obstacle))
 
-    p2 = PoseStamped()
-    p2.header.frame_id = "world"
-    p2.pose.position.x = -0.5
-    p2.pose.position.y = 0
-    p2.pose.position.z = 1
-    scene.add_box("rear_wall", p2, (0.25, 3, 3))
-
+    '''
     p2 = PoseStamped()
     p2.header.frame_id = "world"
     p2.pose.position.x = 1
     p2.pose.position.y = 0
     p2.pose.position.z = 1
+    p2.pose.orientation.w = 1
     scene.add_box("front_wall", p2, (0.1, 2, 2))
+    '''
 
-    print("Adding obstacles to scene..")
+    rospy.sleep(2)
+    print("Obstacles added")
+    
     
 def main():
     # Initialize node
-    rospy.init_node('motion_planner_service_node')
+    rospy.init_node('motion_planner_service_node', anonymous=True)
     moveit_commander.roscpp_initialize(sys.argv) 
 
     # Parse argument from launch file
@@ -347,18 +444,13 @@ def main():
     offset = args.offset
     obstacle = args.obstacle
 
-    scene = moveit_commander.PlanningSceneInterface()
-    rospy.sleep(1)
-
-    # Add collision objects to the scene
-    spawn_obstacles(scene, obstacle)
-    rospy.sleep(1)
-
     # Define motion planner object with argument parsed
-    motion_planner = MotionPlanner(limb, offset)
+    motion_planner = MotionPlanner(limb, offset, obstacle)
+    motion_planner.add_obstacles()
     s = rospy.Service('/' + limb + '_group/baxter_unity_motion_planner', ActionService, motion_planner.dispatcher)
-        
+ 
     print("Ready to plan")
+
     rospy.spin()
 
 

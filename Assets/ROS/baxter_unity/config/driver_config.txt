@@ -1,0 +1,15 @@
+0 thumb_dist_
+1 thumb_prox_
+10 index_dist_
+11 index_prox_
+20 ring_dist_
+21 ring_prox_
+30 middle_dist_
+31 middle_prox_
+110 pinkie_dist_ 
+111 pinkie_prox_
+101 thumb2_prox_
+100 thumb2_distal_
+120 back_
+130 test1_
+131 test2_

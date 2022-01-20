@@ -1,24 +1,32 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="file_name" default="test"/>
+    <arg name="condition" default="0" />
 
+    <!-- Server endpoint node for ROS-Unity communication -->
     <rosparam file="$(find baxter_unity)/config/params.yaml" command="load"/>
-    
     <node name="server_endpoint" pkg="ros_tcp_endpoint" type="default_server_endpoint.py" args="--wait" output="screen" respawn="true" />
     
+    <!-- Joint state node for polling robot joint states whenever planning (works even when robot is not connected) -->
     <node name="joint_states_service" pkg="baxter_unity" type="joint_states_service.py" output="screen" />
     
+    <!-- Left and right motion planner groups -->
     <group ns="left_group">
-	  <node name="motion_planner_left" pkg="baxter_unity" type="motion_planner.py" args="--limb left --offset 0.165 --obstacle 0.625" output="screen"  />
-	  <include file="$(find baxter_unity)/launch/demo.launch" />
+	  <node name="motion_planner_left" pkg="baxter_unity" type="motion_planner.py" args="--limb left --offset 0.165 --obstacle 0.565" output="screen"  />
+	  <include file="$(find baxter_unity)/launch/moveit_config.launch" />
     </group>
     
     <group ns="right_group">
-	  <node name="motion_planner_right" pkg="baxter_unity" type="motion_planner.py" args="--limb right --offset 0.165 --obstacle 0.65" output="screen"  />
-	  <include file="$(find baxter_unity)/launch/demo.launch" />
+	  <node name="motion_planner_right" pkg="baxter_unity" type="motion_planner.py" args="--limb right --offset 0.175 --obstacle 0.57" output="screen"  />
+	  <include file="$(find baxter_unity)/launch/moveit_config.launch" />
     </group>
     
-    <node name="plan_manager" pkg="baxter_unity" type="plan_manager.py" args="--file_name $(arg file_name)" output="screen" />
-    
+    <!-- Static TF publisher to take into account transormation between world and robot base-->
     <node name="world_to_base" pkg="tf" type="static_transform_publisher" args="0 0 0.92 0 0 0 world base 10" />
+
+    <!-- Plan manager node to handle robot's plan, along with user actions through joystick -->
+    <node name="plan_manager" pkg="baxter_unity" type="plan_manager.py" args="--file_name $(arg file_name) --cond $(arg condition)" output="screen" />
+    
+    <!-- Launch file for initializing joint trajectory action server and gripper action server nodes (to be commented when robot is not connected) -->
+    <!-- include file="$(find baxter_unity)/launch/joint_client.launch" -->
 </launch>

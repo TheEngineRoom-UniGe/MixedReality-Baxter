@@ -43,9 +43,8 @@ class TrajectoryClient():
         n = len(trajectory)
 
         close_gripper_idx = 1
-        open_gripper_idx = n - 2
-        wait_before_returning = n - 3
-        wait_before_opening =  2
+        open_gripper_idx = n - 2 if action != "component_handover" else n - 3
+        wait_before_returning = n - 4
 
         for i in range(len(trajectory)):
 
@@ -59,7 +58,7 @@ class TrajectoryClient():
             limb_interface = baxter_interface.limb.Limb(self.limb)
 
             t = 0
-            step = 0.15 if i != 1 else 0.2
+            step = 0.1 if i != 1 else 0.15
             for point in trajectory[i].joint_trajectory.points:
                 t += step
                 traj.add_point(point.positions, point.velocities, point.accelerations, t)
@@ -69,18 +68,19 @@ class TrajectoryClient():
 
             # Close gripper on grasping
             if i == close_gripper_idx:
-                    rospy.sleep(1)
+                    rospy.sleep(1.0)
                     traj.close_gripper()
+                    rospy.sleep(0.5)
             # Reopen gripper on release
             elif i == open_gripper_idx:
-                    rospy.sleep(wait_before_opening)
+                    rospy.sleep(1.5)
                     traj.open_gripper()
                     rospy.sleep(1)
 
             # If operation is component handover, wait several seconds before returning object
             if(action == "component_handover" and i == wait_before_returning):
-                    rospy.sleep(12)
-            rospy.sleep(0.25)
+                    rospy.sleep(13)
+            rospy.sleep(0.2)
 
         self.action_done_pub.publish(Bool())
         print("Action Complete")
@@ -96,7 +96,7 @@ class Trajectory(object):
             FollowJointTrajectoryAction,
         )
         self._goal = FollowJointTrajectoryGoal()
-        self._goal_time_tolerance = rospy.Time(0.05)
+        self._goal_time_tolerance = rospy.Time(0.1)
         self._goal.goal_time_tolerance = self._goal_time_tolerance
         server_up = self._client.wait_for_server(timeout=rospy.Duration(10.0))
         if not server_up:
