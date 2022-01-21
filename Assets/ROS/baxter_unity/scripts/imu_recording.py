@@ -17,8 +17,8 @@ class ImuRecorder:
         self.folder_path = folder_path
         self.is_recording = False
 
-        rospy.Subscriber(self.device + "/backPose", Imu9, self.callback, self.device + "_backPose")
-        rospy.Subscriber(self.device + "/wristPose", Imu9, self.callback, self.device + "_wristPose")
+        rospy.Subscriber(self.device + "/back_Pose", Imu9, self.callback, self.device + "_backPose")
+        rospy.Subscriber(self.device + "/wrist_Pose", Imu9, self.callback, self.device + "_wristPose")
         rospy.Subscriber("/recording", Bool, self.update_recording_status)
 
         rospy.loginfo("{0} IMU recorder initialized".format(self.device))

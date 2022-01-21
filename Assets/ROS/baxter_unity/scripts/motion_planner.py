@@ -36,8 +36,11 @@ class MotionPlanner:
 
         self.publisher = rospy.Publisher('baxter_moveit_trajectory', PlannedAction, queue_size=10)
 
+    def log_msg(self, msg):
+        print(rospy.get_name() + ": " + msg)
+
     def add_obstacles(self):
-        print("Adding obstacles to scene..")
+        self.log_msg("Adding obstacles to scene..")
     
         p = PoseStamped()
         p.header.frame_id = "world"
@@ -46,9 +49,9 @@ class MotionPlanner:
         box_name = "table"
         self.scene.add_box(box_name, p, (2, 2, self.obstacle))
         if(self.wait_for_state_update(box_name, box_is_known=True)):
-            print(box_name + " added to obstacles")
+            self.log_msg(box_name + " added to obstacles")
         else:
-            print("Error while adding obstacles to planning scene")
+            self.log_msg("Error while adding obstacles to planning scene")
 
         p.header.frame_id = "world"
         p.pose.position.x = 0.7
@@ -58,9 +61,9 @@ class MotionPlanner:
         box_name = "bookshelf_side_front"
         self.scene.add_box(box_name, p, (0.01, 0.2, 1.8))
         if(self.wait_for_state_update(box_name, box_is_known=True)):
-            print(box_name + " added to obstacles")
+            self.log_msg(box_name + " added to obstacles")
         else:
-            print("Error while adding obstacles to planning scene")
+            self.log_msg("Error while adding obstacles to planning scene")
 
         p.header.frame_id = "world"
         p.pose.position.x = -0.1
@@ -70,9 +73,9 @@ class MotionPlanner:
         box_name = "bookshelf_side_back"
         self.scene.add_box(box_name, p, (0.01, 0.2, 1.8))
         if(self.wait_for_state_update(box_name, box_is_known=True)):
-            print(box_name + " added to obstacles")
+            self.log_msg(box_name + " added to obstacles")
         else:
-            print("Error while adding obstacles to planning scene")
+            self.log_msg("Error while adding obstacles to planning scene")
 
         p.header.frame_id = "world"
         p.pose.position.x = 0.1
@@ -82,9 +85,9 @@ class MotionPlanner:
         box_name = "bookshelf_top"
         self.scene.add_box(box_name, p, (0.6, 0.4, 0.01))
         if(self.wait_for_state_update(box_name, box_is_known=True)):
-            print(box_name + " added to obstacles")
+            self.log_msg(box_name + " added to obstacles")
         else:
-            print("Error while adding obstacles to planning scene")
+            self.log_msg("Error while adding obstacles to planning scene")
 
     def wait_for_state_update(self, box_name, box_is_known=False, box_is_attached=False, timeout=10):
 
@@ -414,7 +417,7 @@ def main():
     motion_planner.add_obstacles()
     s = rospy.Service('/' + limb + '_group/baxter_unity_motion_planner', ActionService, motion_planner.dispatcher)
  
-    print("Ready to plan")
+    motion_planner.log_msg("Ready to plan")
 
     rospy.spin()
 

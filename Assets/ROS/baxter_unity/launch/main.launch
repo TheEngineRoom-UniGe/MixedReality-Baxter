@@ -12,12 +12,12 @@
     
     <!-- Left and right motion planner groups -->
     <group ns="left_group">
-	  <node name="motion_planner_left" pkg="baxter_unity" type="motion_planner.py" args="--limb left --offset 0.165 --obstacle 0.565" output="screen"  />
+	  <node name="motion_planner" pkg="baxter_unity" type="motion_planner.py" args="--limb left --offset 0.165 --obstacle 0.565" output="screen"  />
 	  <include file="$(find baxter_unity)/launch/moveit_config.launch" />
     </group>
     
     <group ns="right_group">
-	  <node name="motion_planner_right" pkg="baxter_unity" type="motion_planner.py" args="--limb right --offset 0.175 --obstacle 0.57" output="screen"  />
+	  <node name="motion_planner" pkg="baxter_unity" type="motion_planner.py" args="--limb right --offset 0.175 --obstacle 0.57" output="screen"  />
 	  <include file="$(find baxter_unity)/launch/moveit_config.launch" />
     </group>
     
